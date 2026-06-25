@@ -7,6 +7,7 @@ export type Album = {
   duration: number;
   description: string;
   cover: string | null;
+  collectionId: number | null;
 };
 
 export type GenreInfo = { name: string; count: number };

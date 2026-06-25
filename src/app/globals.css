@@ -114,12 +114,56 @@
   --ring: oklch(0.62 0.27 355);
 }
 
+/* Light theme override (still funky — warm cream paper, neon accents) */
+:root:not(.dark) {
+  --background: oklch(0.97 0.012 75);
+  --foreground: oklch(0.18 0.012 60);
+  --card: oklch(0.99 0.008 75);
+  --card-foreground: oklch(0.18 0.012 60);
+  --popover: oklch(0.99 0.008 75);
+  --popover-foreground: oklch(0.18 0.012 60);
+  --primary: oklch(0.55 0.27 355);
+  --primary-foreground: oklch(0.98 0.01 75);
+  --secondary: oklch(0.92 0.015 70);
+  --secondary-foreground: oklch(0.18 0.012 60);
+  --muted: oklch(0.92 0.015 70);
+  --muted-foreground: oklch(0.42 0.02 60);
+  --accent: oklch(0.55 0.22 125);
+  --accent-foreground: oklch(0.98 0.01 75);
+  --destructive: oklch(0.55 0.24 25);
+  --border: oklch(0 0 0 / 12%);
+  --input: oklch(0 0 0 / 10%);
+  --ring: oklch(0.55 0.27 355);
+  --sidebar: oklch(0.99 0.008 75);
+  --sidebar-foreground: oklch(0.18 0.012 60);
+  --sidebar-primary: oklch(0.55 0.27 355);
+  --sidebar-accent: oklch(0.92 0.015 70);
+  --sidebar-border: oklch(0 0 0 / 12%);
+  --hotpink: oklch(0.55 0.27 355);
+  --lime: oklch(0.55 0.22 125);
+  --amber: oklch(0.6 0.18 70);
+  --grape: oklch(0.5 0.26 300);
+  --cyan: oklch(0.5 0.15 195);
+}
+
+html:not(.dark) body {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+html:not(.dark) .grain::before {
+  opacity: 0.04;
+  mix-blend-mode: multiply;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   html {
     color-scheme: dark;
+  }
+  html:not(.dark) {
+    color-scheme: light;
   }
   body {
     @apply bg-background text-foreground;

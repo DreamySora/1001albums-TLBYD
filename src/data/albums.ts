@@ -2,7 +2,9 @@ import { raw1 } from "./raw-1";
 import { raw2 } from "./raw-2";
 import { raw3 } from "./raw-3";
 import { raw4 } from "./raw-4";
-import coversCache from "./covers.json";
+import { raw5 } from "./raw-5";
+import { raw6 } from "./raw-6";
+import coversCache from "./covers-keyed.json";
 
 export type Album = {
   id: number;
@@ -13,47 +15,60 @@ export type Album = {
   duration: number; // minutes
   description: string;
   cover: string | null; // iTunes artwork URL (600x600) or null
+  collectionId: number | null; // iTunes collectionId for tracklist lookup
 };
 
-const allRaw = [...raw1, ...raw2, ...raw3, ...raw4];
-const covers = coversCache as Record<number, { url: string | null; status: string }>;
+const allRaw = [...raw1, ...raw2, ...raw3, ...raw4, ...raw5, ...raw6];
+const covers = coversCache as Record<string, { url: string | null; status: string; cid?: number }>;
+
+function coverKey(artist: string, title: string): string {
+  return `${artist.toLowerCase().trim()}__${title.toLowerCase().trim()}`;
+}
 
 // Normalize a title: strip trailing " (revisit)" / "(revisit)" markers we used as placeholders.
 function normalizeTitle(t: string): string {
   return t.replace(/\s*\(revisit\)\s*$/i, "").trim();
 }
 
-// Soft genre guard: drop entries whose genres scream Metal / Country (shouldn't happen, but safety net).
-const FORBIDDEN = [
-  "metal",
-  "heavy metal",
-  "thrash",
-  "death metal",
-  "black metal",
-  "doom metal",
-  "sludge",
-  "grindcore",
-  "country",
-  "country rock",
-  "country pop",
-  "alt-country", // keep alt-country? user said avoid country & derivatives. Drop it.
+// Soft genre guard: drop entries whose genres scream Metal / Country / EDM / Dubstep / Hardcore
+// / overly-experimental-rock (per user request — these genres are excluded from the crate).
+const FORBIDDEN_EXACT = [
+  "metal", "heavy metal", "thrash", "death metal", "black metal", "doom metal", "sludge", "grindcore",
+  "country", "country rock", "country pop", "alt-country", "country soul",
+  "edm", "dubstep", "hardcore", "happy hardcore", "uk hardcore", "frenchcore",
 ];
 
 function isForbidden(genres: string[]): boolean {
   const lower = genres.map((g) => g.toLowerCase());
-  return lower.some((g) => FORBIDDEN.some((f) => g === f || g.includes("metal") || g.includes("country")));
+  return lower.some(
+    (g) =>
+      FORBIDDEN_EXACT.includes(g) ||
+      g.includes("metal") ||
+      g === "country" ||
+      g === "edm" ||
+      g === "dubstep" ||
+      g === "hardcore"
+  );
 }
 
-// Build unique album list with max 2 per artist.
+// Female-fronted artists — used to add the "Female Vocalist" genre tag.
+// Solos female artists + female-fronted bands.
+import { FEMALE_ARTISTS } from "./female-set";
+
+// Cap for albums tagged "Electronic" — keep ~150 (reduced from 200 per user request).
+const MAX_ELECTRONIC = 150;
+
+// Build unique album list with max 2 per artist + Electronic cap.
 const seenKeys = new Set<string>();
 const perArtist = new Map<string, number>();
+let electronicCount = 0;
 const albums: Album[] = [];
 let id = 0;
 
 for (const [artist, title, year, genreStr, duration, description] of allRaw) {
   const cleanTitle = normalizeTitle(title);
   const genres = genreStr.split("|").map((g) => g.trim()).filter(Boolean);
-  if (genres.length < 5) continue; // require exactly 5 genres
+  if (genres.length < 5) continue; // require at least 5 genres
   if (isForbidden(genres)) continue;
 
   const artistKey = artist.toLowerCase().trim();
@@ -66,16 +81,27 @@ for (const [artist, title, year, genreStr, duration, description] of allRaw) {
   if (artistCount >= 2) continue; // max 2 per artist
   perArtist.set(artistKey, artistCount + 1);
 
+  const isElectronic = genres.includes("Electronic");
+  if (isElectronic && electronicCount >= MAX_ELECTRONIC) continue; // cap
+  if (isElectronic) electronicCount++;
+
   id += 1;
+
+  // Add Female Vocalist tag for female-fronted artists (kept after the 5 curated genres).
+  const finalGenres = FEMALE_ARTISTS.has(artist)
+    ? Array.from(new Set([...genres, "Female Vocalist"]))
+    : genres;
+
   albums.push({
     id,
     artist,
     title: cleanTitle,
     year,
-    genres,
+    genres: finalGenres,
     duration,
     description,
-    cover: covers[id]?.url ?? null,
+    cover: covers[coverKey(artist, cleanTitle)]?.url ?? null,
+    collectionId: covers[coverKey(artist, cleanTitle)]?.cid ?? null,
   });
 }
 

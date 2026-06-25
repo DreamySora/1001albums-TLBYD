@@ -6,6 +6,8 @@ import { Disc3, Loader2, Ghost, ArrowUp } from "lucide-react";
 import { Hero } from "@/components/hero";
 import { FilterBar } from "@/components/filter-bar";
 import { AlbumCard } from "@/components/album-card";
+import { AlbumModal } from "@/components/album-modal";
+import { TopNav } from "@/components/top-nav";
 import {
   applyFilters,
   type Album,
@@ -32,6 +34,7 @@ export default function Page() {
     sort: "default",
   });
   const [visible, setVisible] = useState(INITIAL_VISIBLE);
+  const [openAlbum, setOpenAlbum] = useState<Album | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -87,24 +90,11 @@ export default function Page() {
     window.scrollTo({ top: 280, behavior: "smooth" });
   }, []);
 
+  const onOpen = useCallback((a: Album) => setOpenAlbum(a), []);
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* sticky top nav */}
-      <nav className="sticky top-0 z-50 flex h-14 items-center justify-between border-b border-white/10 bg-background/85 px-4 backdrop-blur-xl sm:px-6">
-        <div className="flex items-center gap-2">
-          <Disc3 className="size-5 animate-[spin_6s_linear_infinite] text-hotpink" />
-          <span className="font-display text-lg tracking-tight uppercase">
-            1001<span className="text-lime">.</span>
-          </span>
-          <span className="hidden font-mono-funk text-[10px] tracking-[0.2em] text-muted-foreground sm:inline">
-            ALBUMS BEFORE YOU DIE
-          </span>
-        </div>
-        <div className="flex items-center gap-3 font-mono-funk text-[10px] tracking-wider text-muted-foreground">
-          <span className="hidden sm:inline">EST. 2025</span>
-          <span className="rounded-full border border-lime/40 px-2 py-0.5 text-lime">DARK MODE ONLY</span>
-        </div>
-      </nav>
+      <TopNav active="home" />
 
       <Hero total={albums.length} genreCount={genres.length} artistCount={artists.length} />
 
@@ -141,12 +131,11 @@ export default function Page() {
             </div>
 
             <motion.div
-              layout
               className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
             >
-              <AnimatePresence mode="popLayout">
+              <AnimatePresence>
                 {shown.map((a, i) => (
-                  <AlbumCard key={a.id} album={a} index={i} onGenre={onGenre} onArtist={onArtist} />
+                  <AlbumCard key={a.id} album={a} index={i} onGenre={onGenre} onArtist={onArtist} onOpen={onOpen} />
                 ))}
               </AnimatePresence>
             </motion.div>
@@ -165,6 +154,7 @@ export default function Page() {
 
       <Footer />
       <BackToTop />
+      <AlbumModal album={openAlbum} onClose={() => setOpenAlbum(null)} />
     </div>
   );
 }

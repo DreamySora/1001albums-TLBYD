@@ -1,8 +1,9 @@
 import { ALBUMS } from "../src/data/albums";
 import { writeFileSync, readFileSync, existsSync } from "fs";
 
-const cachePath = "/home/z/my-project/src/data/covers.json";
-type Cache = Record<number, { url: string | null; status: string }>;
+const cachePath = "/home/z/my-project/src/data/covers-keyed.json";
+type CacheEntry = { url: string | null; status: string; cid?: number };
+type Cache = Record<string, CacheEntry>;
 let cache: Cache = {};
 if (existsSync(cachePath)) {
   try {
@@ -12,15 +13,18 @@ if (existsSync(cachePath)) {
   }
 }
 
+function keyOf(artist: string, title: string): string {
+  return `${artist.toLowerCase().trim()}__${title.toLowerCase().trim()}`;
+}
+
 function upgrade(url: string): string {
-  return url.replace(/\/\d+x\d+bb\.(jpg|png)$/, "/600x600bb.$1");
+  return url.replace(/\/\d+x\d+bb\.(jpg|png|webp)$/, "/600x600bb.jpg");
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-// Global rate limiter: ensure at least `gapMs` between request starts.
 let lastReq = 0;
-const GAP_MS = 350; // ~170 req/min ceiling
+const GAP_MS = Number(process.env.GAP_MS ?? 650);
 async function gate() {
   const now = Date.now();
   const wait = GAP_MS - (now - lastReq);
@@ -28,74 +32,91 @@ async function gate() {
   lastReq = Date.now();
 }
 
-async function fetchCover(artist: string, title: string): Promise<{ url: string | null; blocked: boolean }> {
-  const term = encodeURIComponent(`${artist} ${title}`);
-  const url = `https://itunes.apple.com/search?term=${term}&entity=album&limit=4`;
-  for (let attempt = 0; attempt < 3; attempt++) {
-    await gate();
-    const ctrl = new AbortController();
-    const to = setTimeout(() => ctrl.abort(), 10000);
-    try {
-      const res = await fetch(url, { signal: ctrl.signal });
-      if (res.status === 403 || res.status === 429) {
-        // rate limited — back off hard
-        await sleep(3000 * (attempt + 1));
-        continue;
-      }
-      if (!res.ok) {
-        await sleep(1500 * (attempt + 1));
-        continue;
-      }
-      const json = (await res.json()) as { results?: { artistName: string; collectionName: string; artworkUrl100: string }[] };
-      if (!json.results?.length) return { url: null, blocked: false };
-      const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
-      const wantTitle = norm(title);
-      const wantArtist = norm(artist);
-      let best = json.results.find((r) => norm(r.collectionName) === wantTitle && norm(r.artistName).includes(wantArtist.slice(0, 6)));
-      if (!best) best = json.results.find((r) => norm(r.collectionName).includes(wantTitle.slice(0, 6)));
-      if (!best) best = json.results[0];
-      if (!best.artworkUrl100) return { url: null, blocked: false };
-      return { url: upgrade(best.artworkUrl100), blocked: false };
-    } catch {
-      await sleep(1500 * (attempt + 1));
-    } finally {
-      clearTimeout(to);
-    }
-  }
-  return { url: null, blocked: true };
+function clean(s: string): string {
+  return s
+    .replace(/\(revisit\)/gi, "")
+    .replace(/\(.*?\)/g, "")
+    .replace(/[“”"’‘]/g, "")
+    .replace(/&/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
-const CONCURRENCY = 2;
-// Re-queue entries previously marked "miss" so retries can recover rate-limited ones.
-const todo = ALBUMS.filter((a) => cache[a.id] === undefined || cache[a.id].url === null);
-console.log(`Total albums: ${ALBUMS.length}, already ok: ${ALBUMS.length - todo.length}, to fetch/retry: ${todo.length}`);
+async function trySearch(term: string): Promise<{ cid?: number; url?: string } | null | undefined> {
+  const url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=album&limit=5`;
+  const ctrl = new AbortController();
+  const to = setTimeout(() => ctrl.abort(), 10000);
+  try {
+    const res = await fetch(url, { signal: ctrl.signal });
+    if (res.status === 403 || res.status === 429) return undefined; // blocked — skip retries
+    if (!res.ok) return null;
+    const json = (await res.json()) as {
+      results?: { artistName: string; collectionName: string; artworkUrl100: string; collectionId: number }[];
+    };
+    if (!json.results?.length) return null;
+    const r = json.results[0];
+    return { cid: r.collectionId, url: r.artworkUrl100 };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(to);
+  }
+}
 
+async function fetchCover(artist: string, title: string): Promise<{ url: string | null; cid: number | null; blocked: boolean }> {
+  const a = clean(artist);
+  const t = clean(title);
+  const attempts = [`${a} ${t}`, t];
+  for (const term of attempts) {
+    await gate();
+    const r = await trySearch(term);
+    if (r === undefined) return { url: null, cid: null, blocked: true }; // 403 — stop this album
+    if (r === null) continue;
+    if (!r.url) return { url: null, cid: null, blocked: false };
+    return { url: upgrade(r.url), cid: r.cid ?? null, blocked: false };
+  }
+  return { url: null, cid: null, blocked: false };
+}
+
+const CONCURRENCY = 1;
+const todo = ALBUMS.filter((a) => {
+  const k = keyOf(a.artist, a.title);
+  const e = cache[k];
+  return e === undefined || (!e.url && e.status !== "blocked");
+});
+console.log(`Total: ${ALBUMS.length} | cached ok: ${ALBUMS.length - todo.length} | to fetch/retry: ${todo.length}`);
+
+const BUDGET_MS = Number(process.env.BUDGET_MS ?? 0) || 0;
+const start = Date.now();
+let timeUp = false;
 let done = 0;
 let blockedStreak = 0;
-const start = Date.now();
 
 async function worker(queue: () => (typeof todo)[number] | undefined) {
   while (true) {
+    if (timeUp) return;
     const album = queue();
     if (!album) return;
-    const { url, blocked } = await fetchCover(album.artist, album.title);
-    cache[album.id] = { url, status: url ? "ok" : blocked ? "blocked" : "miss" };
+    const { url, cid, blocked } = await fetchCover(album.artist, album.title);
+    cache[keyOf(album.artist, album.title)] = { url, status: url ? "ok" : blocked ? "blocked" : "miss", cid: cid ?? undefined };
     if (blocked) {
       blockedStreak++;
-      if (blockedStreak > 25) {
-        console.log(`  too many blocked in a row — pausing 15s`);
-        await sleep(15000);
+      if (blockedStreak > 12) {
+        console.log(`  blocked streak — pausing 10s`);
+        await sleep(10000);
         blockedStreak = 0;
       }
-    } else {
-      blockedStreak = 0;
-    }
+    } else blockedStreak = 0;
     done++;
     if (done % 20 === 0) {
       const ok = Object.values(cache).filter((c) => c.url).length;
       const elapsed = ((Date.now() - start) / 1000).toFixed(0);
-      console.log(`  ${done}/${todo.length} done | covers ok: ${ok} | ${elapsed}s`);
+      console.log(`  ${done}/${todo.length} | ok: ${ok} | ${elapsed}s`);
       writeFileSync(cachePath, JSON.stringify(cache));
+    }
+    if (BUDGET_MS && Date.now() - start > BUDGET_MS) {
+      timeUp = true;
+      return;
     }
   }
 }
@@ -105,7 +126,8 @@ const queue = () => (idx.i < todo.length ? todo[idx.i++] : undefined);
 
 await Promise.all(Array.from({ length: CONCURRENCY }, () => worker(queue)));
 
-writeFileSync(cachePath, JSON.stringify(cache, null, 2));
+writeFileSync(cachePath, JSON.stringify(cache, null, 0));
 const ok = Object.values(cache).filter((c) => c.url).length;
 const miss = Object.values(cache).filter((c) => !c.url).length;
-console.log(`DONE. covers ok: ${ok}, miss: ${miss}, total: ${ALBUMS.length}`);
+const withCid = Object.values(cache).filter((c) => c.cid).length;
+console.log(`DONE${timeUp ? " (time budget)" : ""}. ok: ${ok}, miss: ${miss}, withCid: ${withCid}, total: ${ALBUMS.length}`);
