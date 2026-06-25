@@ -5,7 +5,7 @@ export type Album = {
   year: number;
   genres: string[];
   duration: number;
-  description: string;
+  description?: string; // optional in list payload; present in /api/album detail
   cover: string | null;
   collectionId: number | null;
 };

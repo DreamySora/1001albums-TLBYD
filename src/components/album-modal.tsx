@@ -95,6 +95,20 @@ export function AlbumModal({ album, onClose }: { album: Album | null; onClose: (
         if (alive) setLoading(false);
       }
     })();
+    // If the album came from the light list (no description), fetch full detail.
+    if (!album.description) {
+      fetch(`/api/album?id=${album.id}`)
+        .then((r) => r.json())
+        .then((full) => {
+          if (alive && full?.description) {
+            // mutate album object in place so description renders
+            (album as Album).description = full.description;
+            // force re-render
+            setData((d) => (d ? { ...d } : d));
+          }
+        })
+        .catch(() => {});
+    }
     return () => {
       alive = false;
     };

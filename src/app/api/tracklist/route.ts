@@ -138,10 +138,12 @@ async function mbFindRelease(artist: string, title: string): Promise<string | nu
   }
 }
 
-async function mbFetchRecordings(mbid: string): Promise<Track[] | null> {
+async function mbFetchRecordings(mbid: string, artist: string): Promise<Track[] | null> {
   const url = `https://musicbrainz.org/ws/2/release/${mbid}?inc=recordings&fmt=json`;
   const ctrl = new AbortController();
   const to = setTimeout(() => ctrl.abort(), 12000);
+  let artistName = artist;
+  let rawTracks: { title: string; length: number | null }[] = [];
   try {
     const res = await fetch(url, { headers: { "User-Agent": MB_UA, Accept: "application/json" }, signal: ctrl.signal });
     if (!res.ok) return null;
@@ -149,29 +151,66 @@ async function mbFetchRecordings(mbid: string): Promise<Track[] | null> {
       "artist-credit"?: { name?: string }[];
       media?: { tracks?: { position: number; title: string; length: number | null }[] }[];
     };
-    const artistName = json["artist-credit"]?.map((c) => c.name).join("") ?? "";
-    const tracks: Track[] = [];
-    let num = 0;
+    const mbArtist = json["artist-credit"]?.map((c) => c.name).join("") ?? "";
+    if (mbArtist) artistName = mbArtist;
     for (const disc of json.media ?? []) {
-      for (const t of disc.tracks ?? []) {
-        num++;
-        const { name, featuring } = parseFeaturing(t.title ?? "", artistName);
-        tracks.push({
-          number: num,
-          name,
-          artist: artistName,
-          durationMs: t.length ?? null,
-          featuring,
-          previewUrl: null, // MB has no audio previews
-        });
-      }
+      for (const t of disc.tracks ?? []) rawTracks.push({ title: t.title ?? "", length: t.length });
     }
-    return tracks.length ? tracks : null;
   } catch {
     return null;
   } finally {
     clearTimeout(to);
   }
+  if (!rawTracks.length) return null;
+
+  // Build track list, then enrich preview URLs via iTunes track search (parallel, capped).
+  const tracks: Track[] = rawTracks.map((t, i) => {
+    const { name, featuring } = parseFeaturing(t.title, artistName);
+    return {
+      number: i + 1,
+      name,
+      artist: artistName,
+      durationMs: t.length ?? null,
+      featuring,
+      previewUrl: null,
+    };
+  });
+
+  // Enrich preview URLs from iTunes track search (songs are often available even when
+  // the album isn't, e.g. Tame Impala "Currents", The Strokes "Is This It").
+  // Cap concurrency to avoid hammering iTunes; cap total to first 20 tracks.
+  const toEnrich = tracks.slice(0, 20);
+  await Promise.all(
+    toEnrich.map(async (t) => {
+      try {
+        const sUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(`${artistName} ${t.name}`)}&entity=song&limit=3`;
+        const sCtrl = new AbortController();
+        const sTo = setTimeout(() => sCtrl.abort(), 8000);
+        try {
+          const sRes = await fetch(sUrl, { signal: sCtrl.signal });
+          if (sRes.ok) {
+            const sJson = (await sRes.json()) as { results?: { artistName: string; trackName: string; previewUrl?: string }[] };
+            // Pick best-matching track (artist + title).
+            let best: { previewUrl: string; sc: number } | null = null;
+            for (const r of sJson.results ?? []) {
+              if (!r.previewUrl) continue;
+              const sc = matchScore(r.artistName, r.trackName, artistName, t.name);
+              if (sc > (best?.sc ?? 0)) best = { previewUrl: r.previewUrl, sc };
+            }
+            if (best && best.sc >= MATCH_THRESHOLD) {
+              t.previewUrl = best.previewUrl;
+            }
+          }
+        } finally {
+          clearTimeout(sTo);
+        }
+      } catch {
+        // ignore — leave previewUrl null
+      }
+    })
+  );
+
+  return tracks;
 }
 
 // Fallback: search iTunes for the collectionId with verification, returning the best match.
@@ -246,7 +285,7 @@ export async function GET(req: NextRequest) {
   // MusicBrainz fallback: fetch tracklist from MB when iTunes doesn't have the album.
   const mbid = await mbFindRelease(album.artist, album.title);
   if (mbid) {
-    const mbTracks = await mbFetchRecordings(mbid);
+    const mbTracks = await mbFetchRecordings(mbid, album.artist);
     if (mbTracks && mbTracks.length) {
       const totalDurationMs = mbTracks.reduce((s, t) => s + (t.durationMs ?? 0), 0) || null;
       const payload: TracklistResponse = {

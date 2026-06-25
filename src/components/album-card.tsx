@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import type { Album } from "@/lib/albums-client";
 import { cn } from "@/lib/utils";
@@ -14,7 +14,7 @@ function hashStr(s: string, n: number) {
   return h % n;
 }
 
-export function AlbumCard({ album, index, onGenre, onArtist, onOpen }: {
+export const AlbumCard = memo(function AlbumCard({ album, index, onGenre, onArtist, onOpen }: {
   album: Album;
   index: number;
   onGenre: (g: string) => void;
@@ -59,6 +59,7 @@ export function AlbumCard({ album, index, onGenre, onArtist, onOpen }: {
             src={album.cover}
             alt={`${album.title} — ${album.artist} cover`}
             loading="lazy"
+            decoding="async"
             className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
           />
         ) : (
@@ -80,9 +81,11 @@ export function AlbumCard({ album, index, onGenre, onArtist, onOpen }: {
           {album.duration}m
         </span>
 
-        {/* hover overlay with description */}
+        {/* hover overlay with genres + CTA */}
         <div className="pointer-events-none absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/95 via-black/40 to-transparent p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-          <p className="line-clamp-5 text-[11px] leading-snug text-foreground/90">{album.description}</p>
+          <p className="line-clamp-3 text-[11px] leading-snug text-foreground/90">
+            {album.genres.slice(0, 4).join(" · ")}
+          </p>
           <span className="mt-2 inline-flex w-fit items-center gap-1 rounded-full bg-lime px-2 py-0.5 font-mono-funk text-[9px] tracking-wider text-black">
             VIEW TRACKS →
           </span>
@@ -132,4 +135,5 @@ export function AlbumCard({ album, index, onGenre, onArtist, onOpen }: {
       </div>
     </motion.article>
   );
-}
+}, (prev, next) => prev.album.id === next.album.id && prev.index === next.index);
+
