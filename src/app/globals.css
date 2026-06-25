@@ -114,36 +114,37 @@
   --ring: oklch(0.62 0.27 355);
 }
 
-/* Light theme override (still funky — warm cream paper, neon accents) */
+/* Light theme override — warm, soft, paper-like with muted neon (less punchy) */
 :root:not(.dark) {
-  --background: oklch(0.97 0.012 75);
-  --foreground: oklch(0.18 0.012 60);
-  --card: oklch(0.99 0.008 75);
-  --card-foreground: oklch(0.18 0.012 60);
-  --popover: oklch(0.99 0.008 75);
-  --popover-foreground: oklch(0.18 0.012 60);
-  --primary: oklch(0.55 0.27 355);
+  --background: oklch(0.96 0.018 70);
+  --foreground: oklch(0.22 0.015 55);
+  --card: oklch(0.98 0.012 70);
+  --card-foreground: oklch(0.22 0.015 55);
+  --popover: oklch(0.98 0.012 70);
+  --popover-foreground: oklch(0.22 0.015 55);
+  --primary: oklch(0.5 0.2 355);
   --primary-foreground: oklch(0.98 0.01 75);
-  --secondary: oklch(0.92 0.015 70);
-  --secondary-foreground: oklch(0.18 0.012 60);
-  --muted: oklch(0.92 0.015 70);
-  --muted-foreground: oklch(0.42 0.02 60);
-  --accent: oklch(0.55 0.22 125);
+  --secondary: oklch(0.91 0.02 68);
+  --secondary-foreground: oklch(0.22 0.015 55);
+  --muted: oklch(0.91 0.02 68);
+  --muted-foreground: oklch(0.45 0.018 60);
+  --accent: oklch(0.5 0.16 130);
   --accent-foreground: oklch(0.98 0.01 75);
-  --destructive: oklch(0.55 0.24 25);
-  --border: oklch(0 0 0 / 12%);
-  --input: oklch(0 0 0 / 10%);
-  --ring: oklch(0.55 0.27 355);
-  --sidebar: oklch(0.99 0.008 75);
-  --sidebar-foreground: oklch(0.18 0.012 60);
-  --sidebar-primary: oklch(0.55 0.27 355);
-  --sidebar-accent: oklch(0.92 0.015 70);
-  --sidebar-border: oklch(0 0 0 / 12%);
-  --hotpink: oklch(0.55 0.27 355);
-  --lime: oklch(0.55 0.22 125);
-  --amber: oklch(0.6 0.18 70);
-  --grape: oklch(0.5 0.26 300);
-  --cyan: oklch(0.5 0.15 195);
+  --destructive: oklch(0.5 0.2 25);
+  --border: oklch(0.3 0.01 60 / 14%);
+  --input: oklch(0.3 0.01 60 / 10%);
+  --ring: oklch(0.5 0.2 355);
+  --sidebar: oklch(0.98 0.012 70);
+  --sidebar-foreground: oklch(0.22 0.015 55);
+  --sidebar-primary: oklch(0.5 0.2 355);
+  --sidebar-accent: oklch(0.91 0.02 68);
+  --sidebar-border: oklch(0.3 0.01 60 / 14%);
+  /* Muted, warmer neon — less of a punch in light mode */
+  --hotpink: oklch(0.52 0.2 355);
+  --lime: oklch(0.5 0.16 130);
+  --amber: oklch(0.55 0.14 65);
+  --grape: oklch(0.48 0.2 300);
+  --cyan: oklch(0.48 0.12 200);
 }
 
 html:not(.dark) body {

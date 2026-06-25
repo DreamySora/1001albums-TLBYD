@@ -23,9 +23,8 @@ export default function WheelPage() {
     (async () => {
       const res = await fetch("/api/albums");
       const j = await res.json();
-      // For the wheel, sample a manageable number (max 60) so it's visually legible.
-      const sampled = sampleWheel(j.albums as Album[], 60);
-      setAlbums(sampled);
+      // Use ALL albums — the wheel shows every record for the selected genres.
+      setAlbums(j.albums as Album[]);
       setGenres(j.genres);
     })();
   }, []);
@@ -66,8 +65,8 @@ export default function WheelPage() {
           Wheel of <span className="text-gradient-funk">Fate</span>
         </h1>
         <p className="mt-3 max-w-xl text-center font-grotesk text-sm text-muted-foreground">
-          All {albums.length} sampled records are on the wheel. Filter by genre to narrow it down —
-          or spin with everything for a true surprise.
+          All {albums.length.toLocaleString()} records are on the wheel. Filter by genre to narrow it down —
+          or spin with everything for a true surprise. The wheel shows every album matching your selection.
         </p>
 
         {/* Genre filter (compact) */}
@@ -114,24 +113,28 @@ export default function WheelPage() {
                   const path = describeArc(50, 50, 49, start, end);
                   const color = ACCENTS[i % ACCENTS.length];
                   const midAngle = (start + end) / 2;
-                  const labelRadius = 30;
+                  // Hide text labels when slices are too thin to be legible.
+                  const showLabel = sliceAngle >= 6;
+                  const labelRadius = 32;
                   const lx = 50 + labelRadius * Math.cos((midAngle * Math.PI) / 180);
                   const ly = 50 + labelRadius * Math.sin((midAngle * Math.PI) / 180);
                   return (
                     <g key={a.id}>
-                      <path d={path} fill={color} fillOpacity={0.85} stroke="rgba(0,0,0,0.3)" strokeWidth={0.2} />
-                      <text
-                        x={lx}
-                        y={ly}
-                        fill="#0a0a0a"
-                        fontSize={sliceAngle > 12 ? 2.4 : 1.8}
-                        fontWeight={700}
-                        textAnchor="middle"
-                        transform={`rotate(${midAngle}, ${lx}, ${ly})`}
-                        style={{ fontFamily: "var(--font-space-mono), monospace" }}
-                      >
-                        {a.artist.length > 14 ? a.artist.slice(0, 13) + "…" : a.artist}
-                      </text>
+                      <path d={path} fill={color} fillOpacity={0.85} stroke="rgba(0,0,0,0.3)" strokeWidth={pool.length > 200 ? 0.05 : 0.2} />
+                      {showLabel && (
+                        <text
+                          x={lx}
+                          y={ly}
+                          fill="#0a0a0a"
+                          fontSize={sliceAngle > 20 ? 2.6 : sliceAngle > 10 ? 1.8 : 1.2}
+                          fontWeight={700}
+                          textAnchor="middle"
+                          transform={`rotate(${midAngle}, ${lx}, ${ly})`}
+                          style={{ fontFamily: "var(--font-space-mono), monospace" }}
+                        >
+                          {a.artist.length > 12 ? a.artist.slice(0, 11) + "…" : a.artist}
+                        </text>
+                      )}
                     </g>
                   );
                 })}
@@ -209,15 +212,4 @@ function describeArc(cx: number, cy: number, r: number, startAngle: number, endA
   const end = polar(endAngle);
   const largeArc = endAngle - startAngle <= 180 ? 0 : 1;
   return `M ${cx} ${cy} L ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 1 ${end.x} ${end.y} Z`;
-}
-
-function sampleWheel(albums: Album[], n: number): Album[] {
-  if (albums.length <= n) return albums;
-  // shuffle copy
-  const sh = [...albums];
-  for (let i = sh.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [sh[i], sh[j]] = [sh[j], sh[i]];
-  }
-  return sh.slice(0, n);
 }

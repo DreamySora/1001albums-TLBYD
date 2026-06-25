@@ -39,7 +39,19 @@ async function searchMBRelease(artist: string, title: string): Promise<string | 
     const res = await fetch(url, { headers: { "User-Agent": UA, Accept: "application/json" }, signal: ctrl.signal });
     if (!res.ok) return null;
     const json = (await res.json()) as { releases?: { id: string; title: string; "artist-credit"?: { name?: string }[] }[] };
-    return json.releases?.[0]?.id ?? null;
+    if (!json.releases?.length) return null;
+    // Pick the release whose title best matches (prefer exact, then prefix).
+    const want = title.toLowerCase().replace(/[^a-z0-9]/g, "");
+    let best: { id: string; score: number } | null = null;
+    for (const r of json.releases.slice(0, 8)) {
+      const got = (r.title ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      let s = 0;
+      if (got === want) s = 100;
+      else if (got.startsWith(want) || want.startsWith(got)) s = 80;
+      else if (got.includes(want) || want.includes(got)) s = 50;
+      if (s > (best?.score ?? 0)) best = { id: r.id, score: s };
+    }
+    return best && best.score >= 50 ? best.id : json.releases[0]?.id ?? null;
   } catch {
     return null;
   } finally {
@@ -54,13 +66,24 @@ async function fetchCoverArt(mbid: string): Promise<string | null> {
   const to = setTimeout(() => ctrl.abort(), 12000);
   try {
     const res = await fetch(url, { method: "GET", redirect: "follow", signal: ctrl.signal });
-    if (!res.ok) return null;
-    // res.url is the final redirected URL (archive.org CDN).
-    return res.url || null;
+    if (res.ok && res.url) return res.url;
+  } catch {
+    // fall through to release-group attempt
+  } finally {
+    clearTimeout(to);
+  }
+  // Fallback: try release-group cover art.
+  const rgUrl = `https://coverartarchive.org/release-group/${mbid}/front-500`;
+  const ctrl2 = new AbortController();
+  const to2 = setTimeout(() => ctrl2.abort(), 12000);
+  try {
+    const res2 = await fetch(rgUrl, { method: "GET", redirect: "follow", signal: ctrl2.signal });
+    if (res2.ok && res2.url) return res2.url;
+    return null;
   } catch {
     return null;
   } finally {
-    clearTimeout(to);
+    clearTimeout(to2);
   }
 }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFileSync, readFileSync, existsSync, mkdirSync } from "fs";
+import { writeFileSync, readFileSync, existsSync, mkdirSync, unlinkSync } from "fs";
 import { ALBUMS } from "@/data/albums";
+import { matchScore, MATCH_THRESHOLD } from "@/lib/itunes-match";
 
 export const dynamic = "force-dynamic";
 
@@ -41,13 +42,13 @@ function parseFeaturing(trackName: string, artistName: string): { name: string; 
   return { name: cleanName, featuring };
 }
 
-async function fetchTracklist(collectionId: number): Promise<Track[] | null> {
+async function fetchTracklist(collectionId: number, expectedArtist: string, expectedTitle: string): Promise<{ tracks: Track[] | null; verified: boolean }> {
   const url = `https://itunes.apple.com/lookup?id=${collectionId}&entity=song&limit=200`;
   const ctrl = new AbortController();
   const to = setTimeout(() => ctrl.abort(), 12000);
   try {
     const res = await fetch(url, { signal: ctrl.signal });
-    if (!res.ok) return null;
+    if (!res.ok) return { tracks: null, verified: false };
     const json = (await res.json()) as {
       results?: {
         wrapperType: string;
@@ -58,9 +59,18 @@ async function fetchTracklist(collectionId: number): Promise<Track[] | null> {
         artistName?: string;
         trackTimeMillis?: number;
         previewUrl?: string;
+        collectionName?: string;
       }[];
     };
-    if (!json.results) return null;
+    if (!json.results) return { tracks: null, verified: false };
+    // The first result with wrapperType === "collection" carries the album metadata — verify it matches.
+    const collection = json.results.find((r) => r.wrapperType === "collection");
+    if (collection) {
+      const verified = verifyMatch(expectedArtist, expectedTitle, collection.artistName ?? "", collection.collectionName ?? "");
+      if (!verified) {
+        return { tracks: null, verified: false };
+      }
+    }
     const tracks = json.results
       .filter((r) => r.wrapperType === "track" && r.kind === "song" && r.trackName)
       .map((r) => {
@@ -75,25 +85,49 @@ async function fetchTracklist(collectionId: number): Promise<Track[] | null> {
         } as Track;
       })
       .sort((a, b) => a.number - b.number);
-    return tracks;
+    return { tracks, verified: true };
   } catch {
-    return null;
+    return { tracks: null, verified: false };
   } finally {
     clearTimeout(to);
   }
 }
 
-// Fallback: if we don't have a stored collectionId, search iTunes for it.
+// Fuzzy artist+title verification (must share significant tokens).
+function verifyMatch(queryArtist: string, queryTitle: string, resArtist: string, resTitle: string): boolean {
+  const STOP = new Set(["the","and","a","an","of","in","on","for","to","my","is","it","vol","pt","part","ii","iii","ep","lp","deluxe","edition","anniversary","remaster","remix","mix","super","white","album","bsides","live","single","demo","sessions"]);
+  const tok = (s: string) => new Set(
+    s.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter(Boolean)
+      .filter((w) => w.length > 2 && !STOP.has(w) && !/^\d+$/.test(w))
+  );
+  const qa = tok(queryArtist), qt = tok(queryTitle), ra = tok(resArtist), rt = tok(resTitle);
+  const artistOk = [...qa].some((t) => ra.has(t));
+  const titleOk = [...qt].some((t) => rt.has(t));
+  return artistOk && titleOk;
+}
+
+// Fallback: search iTunes for the collectionId with verification, returning the best match.
 async function findCollectionId(artist: string, title: string): Promise<number | null> {
   const term = encodeURIComponent(`${artist} ${title}`);
-  const url = `https://itunes.apple.com/search?term=${term}&entity=album&limit=3`;
+  const url = `https://itunes.apple.com/search?term=${term}&entity=album&limit=10`;
   const ctrl = new AbortController();
   const to = setTimeout(() => ctrl.abort(), 10000);
   try {
     const res = await fetch(url, { signal: ctrl.signal });
     if (!res.ok) return null;
-    const json = (await res.json()) as { results?: { collectionId: number }[] };
-    return json.results?.[0]?.collectionId ?? null;
+    const json = (await res.json()) as { results?: { collectionId: number; artistName: string; collectionName: string }[] };
+    if (!json.results?.length) return null;
+    // Strict match: only accept results whose artist+title match well.
+    // This prevents e.g. the "Wednesday" Netflix soundtrack being used for the band Wednesday,
+    // or "Currents B-Sides" for "Currents".
+    let best: { cid: number; sc: number } | null = null;
+    for (const r of json.results) {
+      const sc = matchScore(r.artistName, r.collectionName, artist, title);
+      if (sc <= 0) continue;
+      if (!best || sc > best.sc) best = { cid: r.collectionId, sc };
+    }
+    if (best && best.sc >= MATCH_THRESHOLD) return best.cid;
+    return null;
   } catch {
     return null;
   } finally {
@@ -134,11 +168,16 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const tracks = await fetchTracklist(cid);
-  if (!tracks) {
+  const { tracks, verified } = await fetchTracklist(cid, album.artist, album.title);
+  if (!tracks || !verified) {
+    // Verification failed or no tracks — do NOT serve wrong songs. Return empty.
+    // Also delete any stale cache file so it retries next time.
+    try {
+      if (existsSync(cacheFile)) unlinkSync(cacheFile);
+    } catch {}
     return NextResponse.json({
       albumId,
-      collectionId: cid,
+      collectionId: verified ? cid : null,
       totalDurationMs: null,
       trackCount: 0,
       tracks: [],

@@ -50,3 +50,37 @@ Stage Summary:
 - New genres: City Pop(13), Jazz Fusion(32), Neapolitan(13), Afro-Funk(11), Salsa(23), Timba(3).
 - Cover fetch ongoing: ~1068/1546 (69%). iTunes + MusicBrainz/Cover Art Archive dual-source.
 - All new pages verified working via Agent Browser (home, /random, /wheel, /account, theme toggle, modal previews).
+
+---
+Task ID: 3 (cover/tracklist accuracy + UI polish)
+Agent: main
+Task: Fix cover/name shift, wrong tracklists, wheel sample cap, light mode, glow
+
+Work Log:
+- ROOT CAUSE of cover/tracklist mismatch: iTunes Search API returns wrong albums in first position
+  (e.g. "Currents B-Sides & Remixes - EP" for "Currents", Netflix "Wednesday" soundtrack for the band).
+  Old matching took results[0] blindly.
+- Created src/lib/itunes-match.ts: strict matchScore() requiring near-exact title match + decent
+  artist overlap (threshold 0.6). Rejects deluxe/remix/b-sides/EP variants.
+- Updated fetch-covers.ts to use matchScore: only accepts results scoring >= 0.6. No match → null
+  (MB fallback recovers correct cover).
+- Updated tracklist API findCollectionId to use matchScore: rejects wrong albums (e.g. Netflix
+  Wednesday). Tame Impala "Currents" and band "Wednesday" now correctly show "No tracklist found"
+  instead of wrong tracks.
+- Re-verified ALL 1546 albums with strict matching (REVERIFY mode, resumable via reverify-done.json).
+  Removed 723 wrong covers. Recovered via MusicBrainz/Cover Art Archive (with release-group fallback).
+  Final: 581 correct covers (vs 1209 before, ~723 of which were wrong).
+- Improved MB script: title-scored release selection + release-group CAA fallback.
+- Wheel: removed 60-album sample cap — now shows ALL albums for selected genres (1,546 total).
+  Labels auto-hide when slices too thin (<6deg).
+- Light mode: warmer/softer palette — cream background (oklch 0.96 0.018 70), muted neon
+  (lower chroma), softer borders. VLM confirms "warm and soft, cream/paper-like".
+- Glow: increased alpha 0.55→0.7, added double shadow (0 14px 60px + 0 0 24px).
+- Lint clean. All verified via Agent Browser.
+
+Stage Summary:
+- Cover/tracklist mismatch: FIXED (strict iTunes matching, MB fallback).
+- Shift bug: still fixed (framer-motion layout removed earlier). VLM confirms "All match".
+- Wheel: shows all 1,546 records, genre-filterable, spins correctly.
+- Light mode: warm cream, muted neon, less punchy.
+- Glow: stronger, blended from cover colors.

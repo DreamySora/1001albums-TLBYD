@@ -30,7 +30,7 @@ export function AlbumCard({ album, index, onGenre, onArtist, onOpen }: {
     getDominantColors(album.cover, 3).then((colors: RGB[]) => {
       if (!alive || !colors.length) return;
       const blended = blendColors(colors);
-      if (blended) setGlowColor(rgbToCss(blended, 0.55));
+      if (blended) setGlowColor(rgbToCss(blended, 0.7));
     });
     return () => {
       alive = false;
@@ -51,7 +51,7 @@ export function AlbumCard({ album, index, onGenre, onArtist, onOpen }: {
         type="button"
         onClick={() => onOpen(album)}
         className="relative block aspect-square w-full overflow-hidden rounded-xl bg-card text-left ring-1 ring-white/10 transition-transform duration-300 hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-hotpink"
-        style={{ boxShadow: `0 10px 40px -16px ${accent}` }}
+        style={{ boxShadow: `0 14px 60px -12px ${accent}, 0 0 24px -8px ${accent}` }}
         aria-label={`Open ${album.title} by ${album.artist}`}
       >
         {album.cover ? (
