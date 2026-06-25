@@ -31,7 +31,7 @@ export default function WheelPage() {
 
   const pool = useMemo(() => {
     if (!selected.length) return albums;
-    return albums.filter((a) => selected.some((g) => a.genres.includes(g)));
+    return albums.filter((a) => selected.every((g) => a.genres.includes(g)));
   }, [albums, selected]);
 
   const sliceAngle = pool.length ? 360 / pool.length : 0;
@@ -66,7 +66,7 @@ export default function WheelPage() {
         </h1>
         <p className="mt-3 max-w-xl text-center font-grotesk text-sm text-muted-foreground">
           All {albums.length.toLocaleString()} records are on the wheel. Filter by genre to narrow it down —
-          or spin with everything for a true surprise. The wheel shows every album matching your selection.
+          selecting multiple genres shows only albums that have ALL of them.
         </p>
 
         {/* Genre filter (compact) */}

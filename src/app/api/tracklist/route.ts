@@ -106,6 +106,74 @@ function verifyMatch(queryArtist: string, queryTitle: string, resArtist: string,
   return artistOk && titleOk;
 }
 
+// MusicBrainz fallback for tracklists (used when iTunes doesn't have the album,
+// e.g. "Is This It" by The Strokes or "Currents" by Tame Impala are not on iTunes).
+const MB_UA = "1001Albums/1.0 (contact: crate@digger.example)";
+async function mbFindRelease(artist: string, title: string): Promise<string | null> {
+  const q = `release:"${title}" AND artist:"${artist}"`;
+  const url = `https://musicbrainz.org/ws/2/release/?query=${encodeURIComponent(q)}&fmt=json&limit=5`;
+  const ctrl = new AbortController();
+  const to = setTimeout(() => ctrl.abort(), 12000);
+  try {
+    const res = await fetch(url, { headers: { "User-Agent": MB_UA, Accept: "application/json" }, signal: ctrl.signal });
+    if (!res.ok) return null;
+    const json = (await res.json()) as { releases?: { id: string; title: string }[] };
+    if (!json.releases?.length) return null;
+    // Prefer exact title match.
+    const want = title.toLowerCase().replace(/[^a-z0-9]/g, "");
+    let best: { id: string; sc: number } | null = null;
+    for (const r of json.releases) {
+      const got = (r.title ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      let s = 0;
+      if (got === want) s = 100;
+      else if (got.startsWith(want) || want.startsWith(got)) s = 80;
+      else if (got.includes(want) || want.includes(got)) s = 50;
+      if (s > (best?.sc ?? 0)) best = { id: r.id, sc: s };
+    }
+    return best && best.sc >= 50 ? best.id : json.releases[0]?.id ?? null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(to);
+  }
+}
+
+async function mbFetchRecordings(mbid: string): Promise<Track[] | null> {
+  const url = `https://musicbrainz.org/ws/2/release/${mbid}?inc=recordings&fmt=json`;
+  const ctrl = new AbortController();
+  const to = setTimeout(() => ctrl.abort(), 12000);
+  try {
+    const res = await fetch(url, { headers: { "User-Agent": MB_UA, Accept: "application/json" }, signal: ctrl.signal });
+    if (!res.ok) return null;
+    const json = (await res.json()) as {
+      "artist-credit"?: { name?: string }[];
+      media?: { tracks?: { position: number; title: string; length: number | null }[] }[];
+    };
+    const artistName = json["artist-credit"]?.map((c) => c.name).join("") ?? "";
+    const tracks: Track[] = [];
+    let num = 0;
+    for (const disc of json.media ?? []) {
+      for (const t of disc.tracks ?? []) {
+        num++;
+        const { name, featuring } = parseFeaturing(t.title ?? "", artistName);
+        tracks.push({
+          number: num,
+          name,
+          artist: artistName,
+          durationMs: t.length ?? null,
+          featuring,
+          previewUrl: null, // MB has no audio previews
+        });
+      }
+    }
+    return tracks.length ? tracks : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(to);
+  }
+}
+
 // Fallback: search iTunes for the collectionId with verification, returning the best match.
 async function findCollectionId(artist: string, title: string): Promise<number | null> {
   const term = encodeURIComponent(`${artist} ${title}`);
@@ -157,47 +225,51 @@ export async function GET(req: NextRequest) {
   }
 
   const cid = album.collectionId ?? (await findCollectionId(album.artist, album.title));
-  if (!cid) {
-    return NextResponse.json({
-      albumId,
-      collectionId: null,
-      totalDurationMs: null,
-      trackCount: 0,
-      tracks: [],
-      cached: false,
-    });
+  if (cid) {
+    const { tracks, verified } = await fetchTracklist(cid, album.artist, album.title);
+    if (tracks && verified) {
+      const totalDurationMs = tracks.reduce((s, t) => s + (t.durationMs ?? 0), 0) || null;
+      const payload: TracklistResponse = {
+        albumId,
+        collectionId: cid,
+        totalDurationMs,
+        trackCount: tracks.length,
+        tracks,
+        cached: false,
+      };
+      try { writeFileSync(cacheFile, JSON.stringify(payload)); } catch {}
+      return NextResponse.json(payload);
+    }
+    // iTunes failed verification — fall through to MusicBrainz fallback.
   }
 
-  const { tracks, verified } = await fetchTracklist(cid, album.artist, album.title);
-  if (!tracks || !verified) {
-    // Verification failed or no tracks — do NOT serve wrong songs. Return empty.
-    // Also delete any stale cache file so it retries next time.
-    try {
-      if (existsSync(cacheFile)) unlinkSync(cacheFile);
-    } catch {}
-    return NextResponse.json({
-      albumId,
-      collectionId: verified ? cid : null,
-      totalDurationMs: null,
-      trackCount: 0,
-      tracks: [],
-      cached: false,
-    });
+  // MusicBrainz fallback: fetch tracklist from MB when iTunes doesn't have the album.
+  const mbid = await mbFindRelease(album.artist, album.title);
+  if (mbid) {
+    const mbTracks = await mbFetchRecordings(mbid);
+    if (mbTracks && mbTracks.length) {
+      const totalDurationMs = mbTracks.reduce((s, t) => s + (t.durationMs ?? 0), 0) || null;
+      const payload: TracklistResponse = {
+        albumId,
+        collectionId: cid ?? null,
+        totalDurationMs,
+        trackCount: mbTracks.length,
+        tracks: mbTracks,
+        cached: false,
+      };
+      try { writeFileSync(cacheFile, JSON.stringify(payload)); } catch {}
+      return NextResponse.json(payload);
+    }
   }
 
-  const totalDurationMs = tracks.reduce((s, t) => s + (t.durationMs ?? 0), 0) || null;
-  const payload: TracklistResponse = {
+  // Neither iTunes nor MB had the tracklist — return empty (honest, no wrong songs).
+  try { if (existsSync(cacheFile)) unlinkSync(cacheFile); } catch {}
+  return NextResponse.json({
     albumId,
-    collectionId: cid,
-    totalDurationMs,
-    trackCount: tracks.length,
-    tracks,
+    collectionId: cid ?? null,
+    totalDurationMs: null,
+    trackCount: 0,
+    tracks: [],
     cached: false,
-  };
-  try {
-    writeFileSync(cacheFile, JSON.stringify(payload));
-  } catch {
-    // ignore write errors
-  }
-  return NextResponse.json(payload);
+  });
 }

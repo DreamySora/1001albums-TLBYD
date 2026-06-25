@@ -26,7 +26,7 @@ export default function RandomPage() {
 
   const pool = useMemo(() => {
     if (!selected.length) return albums;
-    return albums.filter((a) => selected.some((g) => a.genres.includes(g)));
+    return albums.filter((a) => selected.every((g) => a.genres.includes(g)));
   }, [albums, selected]);
 
   const pickRandom = () => {
@@ -65,7 +65,7 @@ export default function RandomPage() {
         </h1>
         <p className="mt-4 max-w-xl text-center font-grotesk text-muted-foreground">
           Pick the genres you're in the mood for (or none at all) and let fate choose your next
-          listen. Every spin pulls a record from the full crate.
+          listen. Selecting multiple genres shows only albums that have ALL of them.
         </p>
 
         {/* Genre picker */}

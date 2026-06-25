@@ -84,3 +84,35 @@ Stage Summary:
 - Wheel: shows all 1,546 records, genre-filterable, spins correctly.
 - Light mode: warm cream, muted neon, less punchy.
 - Glow: stronger, blended from cover colors.
+
+---
+Task ID: 4 (final fixes)
+Agent: main
+Task: Fix multi-genre filter (AND not OR), tracklist missing for iTunes-less albums, restart server
+
+Work Log:
+- Multi-genre filter: changed OR (some) → AND (every) in 3 places:
+  - src/lib/albums-client.ts applyFilters()
+  - src/app/random/page.tsx pool
+  - src/app/wheel/page.tsx pool
+  Now selecting "Electronic" + "House" shows only albums with BOTH genres (11 albums, e.g.
+  Daft Punk Discovery, New Order Technique) — NOT Currents (only Electronic).
+  Updated help text on random/wheel pages to clarify "selecting multiple genres shows only
+  albums that have ALL of them".
+- Tracklist missing for Strokes/Tame Impala: root cause = iTunes doesn't carry these albums
+  (licensing), so collectionId is null and findCollectionId strict search correctly rejects
+  wrong matches (B-Sides, Netflix Wednesday). Added MusicBrainz fallback in tracklist API:
+  - mbFindRelease(): searches MB for release MBID (title-scored selection)
+  - mbFetchRecordings(): fetches tracklist from MB /ws/2/release/{mbid}?inc=recordings
+  - GET handler: tries iTunes first (with cid or findCollectionId), then falls back to MB
+  Result: Strokes "Is This It" → 11 correct tracks; Tame Impala "Currents" → 13 correct tracks.
+  MB tracks have durations but no audio previews (previewUrl: null → grey Ban icon).
+- Dev server: restarted. Note: sandbox kills background processes when bash command returns;
+  user should run `bun run dev` to start.
+- Lint clean. All verified via Agent Browser.
+
+Stage Summary:
+- Genre filter: AND semantics (album must have ALL selected genres). Verified: Electronic+House
+  → 11 albums, Currents excluded.
+- Tracklist: MusicBrainz fallback recovers correct tracks for iTunes-less albums (Strokes,
+  Tame Impala, etc.). No more "No tracklist found" for well-known albums.

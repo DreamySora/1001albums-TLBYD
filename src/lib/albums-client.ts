@@ -64,7 +64,8 @@ export function artistLetter(artist: string): string {
 export function applyFilters(albums: Album[], f: Filters): Album[] {
   const search = f.search.trim().toLowerCase();
   let out = albums.filter((a) => {
-    if (f.genres.length && !f.genres.some((g) => a.genres.includes(g))) return false;
+    // AND semantics: album must contain ALL selected genres (not just one).
+    if (f.genres.length && !f.genres.every((g) => a.genres.includes(g))) return false;
     if (f.artist && a.artist !== f.artist) return false;
     if (f.letter && artistLetter(a.artist) !== f.letter) return false;
     const bucket = DURATION_BUCKETS.find((b) => b.id === f.duration)!;
