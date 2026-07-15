@@ -52,7 +52,7 @@ export default function RandomPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <TopNav active="random" />
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center px-4 py-10 sm:px-6">
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center px-4 pt-20 pb-10 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}

@@ -311,14 +311,15 @@ function BackToTop() {
     <AnimatePresence>
       {show && (
         <motion.button
-          initial={{ opacity: 0, scale: 0.6 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.6 }}
+          initial={{ opacity: 0, scale: 0.6, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.6, y: 20 }}
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="fixed bottom-6 right-6 z-50 flex size-11 items-center justify-center rounded-full bg-hotpink text-black shadow-lg transition hover:scale-110 glow-pink"
+          className="fixed bottom-4 right-4 z-50 flex size-9 items-center justify-center rounded-full bg-hotpink text-black shadow-lg transition hover:scale-105 glow-pink sm:bottom-6 sm:right-6 sm:size-11 pb-safe"
           aria-label="Back to top"
+          style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
         >
-          <ArrowUp className="size-5" />
+          <ArrowUp className="size-4 sm:size-5" />
         </motion.button>
       )}
     </AnimatePresence>

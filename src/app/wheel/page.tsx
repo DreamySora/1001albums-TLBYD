@@ -57,7 +57,7 @@ export default function WheelPage() {
     <div className="flex min-h-screen flex-col bg-background">
       <TopNav active="wheel" />
 
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col items-center px-4 py-8 sm:px-6">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col items-center px-4 pt-20 pb-8 sm:px-6">
         <div className="flex items-center gap-2 font-mono-funk text-[11px] tracking-[0.25em] text-amber">
           <Disc3 className="size-4" /> SPIN THE WHEEL
         </div>

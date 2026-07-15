@@ -30,7 +30,7 @@ export default function AccountPage() {
     <div className="flex min-h-screen flex-col bg-background">
       <TopNav active="account" />
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6">
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 pt-20 pb-8 sm:px-6">
         <div className="flex items-center gap-2 font-mono-funk text-[11px] tracking-[0.25em] text-cyan">
           <Disc3 className="size-4" /> YOUR PERSONAL CRATE
         </div>
