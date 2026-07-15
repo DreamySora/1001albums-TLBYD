@@ -2,7 +2,7 @@
 
 import { useTheme } from "next-themes";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sun, Moon, Menu, X, Disc3, Shuffle, RotateCcw, User, Compass, Dice6, Music } from "lucide-react";
+import { Sun, Moon, Menu, X, Disc3, User, Compass, Dice6, Music } from "lucide-react";
 import Link from "next/link";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { useState } from "react";
@@ -14,18 +14,20 @@ export function TopNav({ active }: { active: "home" | "random" | "wheel" | "acco
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 h-14 bg-background/90 backdrop-blur-xl border-b border-white/10">
       <div className="mx-auto flex h-full max-w-[1800px] items-center justify-between px-3 sm:px-5">
-        <Link href="/" className="flex items-center gap-2 font-display text-lg uppercase tracking-tight text-foreground" aria-label="Home">
+        <Link href="/" className="flex items-center gap-3 font-display text-lg uppercase tracking-tight text-foreground" aria-label="Home">
           <Disc3 className="size-6 text-hotpink animate-[spin_8s_linear_infinite]" />
-          <span className="hidden sm:inline-block font-display text-xl tracking-tight">
-            1001<span className="text-lime">.</span>
-          </span>
-          <span className="hidden sm:inline-block font-grotesk text-[10px] tracking-widest text-lime/60 uppercase ml-3 leading-none">
-            ALBUMS TO LISTEN BEFORE YOU DIE
-          </span>
+          <div className="hidden sm:flex flex-col items-center justify-center leading-none">
+            <span className="font-display text-xl tracking-tight">
+              1001<span className="text-lime">.</span>
+            </span>
+            <span className="font-grotesk text-[9px] tracking-widest text-lime/80 uppercase mt-0.5">
+              Albums to listen before you die
+            </span>
+          </div>
         </Link>
 
         {/* Desktop nav */}
-        <div className="hidden md:flex items-center gap-4 ml-4">
+        <div className="hidden md:flex items-center gap-4">
           <NavLink href="/" label="Browse" active={active === "home"} className="size-11"><Compass className="size-6" /></NavLink>
           <NavLink href="/random" label="Random" active={active === "random"} className="size-11"><Dice6 className="size-6" /></NavLink>
           <NavLink href="/wheel" label="Wheel" active={active === "wheel"} className="size-11"><Music className="size-6" /></NavLink>
@@ -35,7 +37,7 @@ export function TopNav({ active }: { active: "home" | "random" | "wheel" | "acco
 
         {/* Mobile menu button */}
         <button
-          className="md:hidden flex size-9 items-center justify-center rounded-full border border-white/15 bg-card/60 text-foreground transition hover:border-hotpink"
+          className="md:hidden flex size-11 items-center justify-center rounded-full border border-white/15 bg-card/60 text-foreground transition hover:border-hotpink"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
           aria-expanded={mobileOpen}
@@ -54,10 +56,10 @@ export function TopNav({ active }: { active: "home" | "random" | "wheel" | "acco
             className="md:hidden border-t border-white/10 bg-background/95 backdrop-blur-xl py-3 px-3"
           >
             <div className="flex flex-col gap-2">
-              <NavLink href="/" label="Browse" active={active === "home"} className="justify-start px-3 py-2 text-base"><Compass className="size-6 mr-3" /> Browse</NavLink>
-              <NavLink href="/random" label="Random" active={active === "random"} className="justify-start px-3 py-2 text-base"><Dice6 className="size-6 mr-3" /> Random</NavLink>
-              <NavLink href="/wheel" label="Wheel" active={active === "wheel"} className="justify-start px-3 py-2 text-base"><Music className="size-6 mr-3" /> Wheel</NavLink>
-              <NavLink href="/account" label="Account" active={active === "account"} className="justify-start px-3 py-2 text-base"><User className="size-6 mr-3" /> Account</NavLink>
+              <NavLink href="/" label="Browse" active={active === "home"} className="justify-start px-4 py-3 text-base"><Compass className="size-6 mr-4" /> Browse</NavLink>
+              <NavLink href="/random" label="Random" active={active === "random"} className="justify-start px-4 py-3 text-base"><Dice6 className="size-6 mr-4" /> Random</NavLink>
+              <NavLink href="/wheel" label="Wheel" active={active === "wheel"} className="justify-start px-4 py-3 text-base"><Music className="size-6 mr-4" /> Wheel</NavLink>
+              <NavLink href="/account" label="Account" active={active === "account"} className="justify-start px-4 py-3 text-base"><User className="size-6 mr-4" /> Account</NavLink>
             </div>
             <ThemeToggle className="mt-2 mb-1" />
           </motion.div>
@@ -67,14 +69,14 @@ export function TopNav({ active }: { active: "home" | "random" | "wheel" | "acco
   );
 }
 
-function ThemeToggle() {
+function ThemeToggle({ className = "" }: { className?: string }) {
   const { theme, setTheme } = useTheme();
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <button
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="flex size-9 items-center justify-center rounded-full border border-white/15 bg-card/60 text-foreground transition hover:border-hotpink hover:text-hotpink"
+          className={`flex size-11 items-center justify-center rounded-full border border-white/15 bg-card/60 text-foreground transition hover:border-hotpink hover:text-hotpink ${className}`}
           aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
         >
           <AnimatePresence mode="wait">
