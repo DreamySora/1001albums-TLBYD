@@ -19,10 +19,12 @@ export function getDominantColors(url: string, count = 3): Promise<RGB[]> {
   if (cache.has(url)) return Promise.resolve(cache.get(url)!);
   return new Promise((resolve) => {
     const img = new Image();
-    img.crossOrigin = "anonymous";
+    // Only set crossOrigin for known-CORS hosts (iTunes/mzstatic.com).
+    // Discogs images don't send CORS headers and would taint the canvas.
+    if (url.includes("mzstatic.com")) img.crossOrigin = "anonymous";
     img.onload = () => {
       try {
-        const size = 48; // downscale for speed
+        const size = 48;
         const canvas = document.createElement("canvas");
         canvas.width = size;
         canvas.height = size;

@@ -30,7 +30,7 @@ export function Hero({ total, genreCount, artistCount }: { total: number; genreC
         transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      <div className="relative mx-auto max-w-[1800px] px-3 pt-8 pb-4 sm:px-6 sm:pt-16">
+      <div className="relative mx-auto max-w-[1800px] px-3 pt-16 pb-4 sm:px-6 sm:pt-20">
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

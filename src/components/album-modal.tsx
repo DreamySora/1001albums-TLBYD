@@ -175,13 +175,13 @@ export function AlbumModal({ album, onClose }: { album: Album | null; onClose: (
             onDragEnd={(_, info) => {
               if (info.offset.y > 120) onClose();
             }}
-            className="relative flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-t-2xl border border-white/10 bg-card shadow-2xl sm:rounded-2xl sm:cursor-default cursor-grab active:cursor-grabbing"
+            className="relative max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-t-2xl border border-white/10 bg-card shadow-2xl sm:rounded-2xl sm:cursor-default cursor-grab active:cursor-grabbing scrollbar-funky"
             style={{ boxShadow: `0 -10px 80px -20px ${accent}` }}
           >
             {/* Header: cover + meta */}
-            <div className="relative flex flex-col gap-4 border-b border-white/10 p-4 pt-6 sm:flex-row sm:p-6">
+            <div className="flex flex-col gap-3 border-b border-white/10 p-3 sm:flex-row sm:gap-4 sm:p-6">
               <div
-                className="relative aspect-square w-full shrink-0 overflow-hidden rounded-xl ring-1 ring-white/10 sm:w-36"
+                className="relative aspect-square w-24 shrink-0 overflow-hidden rounded-xl ring-1 ring-white/10 sm:w-36"
                 style={{ boxShadow: `0 8px 30px -10px ${accent}` }}
               >
 {album.cover ? (
@@ -198,7 +198,7 @@ export function AlbumModal({ album, onClose }: { album: Album | null; onClose: (
                     className="flex h-full w-full items-center justify-center p-2 text-center"
                     style={{ background: `linear-gradient(140deg, ${accent}, oklch(0.16 0.01 60))` }}
                   >
-                    <span className="font-display text-lg leading-none text-black/80 uppercase">{album.title}</span>
+                    <span className="font-display text-sm leading-none text-black/80 uppercase">{album.title}</span>
                   </div>
                 )}
               </div>
@@ -206,70 +206,69 @@ export function AlbumModal({ album, onClose }: { album: Album | null; onClose: (
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <h2 className="font-display text-2xl leading-tight tracking-tight uppercase sm:text-3xl">
+                    <h2 className="font-display text-lg leading-tight tracking-tight uppercase sm:text-3xl">
                       {album.title}
                     </h2>
-                    <p className="mt-1 font-grotesk text-base text-muted-foreground">{album.artist}</p>
+                    <p className="mt-0.5 font-grotesk text-sm text-muted-foreground sm:text-base">{album.artist}</p>
                   </div>
                   <button
                     onClick={onClose}
-                    className="shrink-0 rounded-full bg-white/10 p-2 text-foreground transition hover:bg-white/20"
+                    className="shrink-0 rounded-full bg-white/10 p-1.5 text-foreground transition hover:bg-white/20 sm:p-2"
                     aria-label="Close"
                   >
-                    <X className="size-5" />
+                    <X className="size-4 sm:size-5" />
                   </button>
                 </div>
 
-                <div className="mt-3 flex flex-wrap gap-2 font-mono-funk text-[10px] tracking-wider">
-                  <span className="rounded-md bg-lime/15 px-2 py-0.5 text-lime">{album.year}</span>
-                  <span className="rounded-md bg-amber/15 px-2 py-0.5 text-amber">{album.duration} min</span>
-                  <span className="rounded-md bg-hotpink/15 px-2 py-0.5 text-hotpink">
+                <div className="mt-2 flex flex-wrap gap-1.5 font-mono-funk text-[9px] tracking-wider sm:text-[10px]">
+                  <span className="rounded-md bg-lime/15 px-1.5 py-0.5 text-lime sm:px-2">{album.year}</span>
+                  <span className="rounded-md bg-amber/15 px-1.5 py-0.5 text-amber sm:px-2">{album.duration} min</span>
+                  <span className="rounded-md bg-hotpink/15 px-1.5 py-0.5 text-hotpink sm:px-2">
                     {data?.trackCount ? `${data.trackCount} tracks` : "…"}
                   </span>
                   {data?.totalDurationMs ? (
-                    <span className="rounded-md bg-cyan/15 px-2 py-0.5 text-cyan">
+                    <span className="rounded-md bg-cyan/15 px-1.5 py-0.5 text-cyan sm:px-2">
                       {fmtDuration(data.totalDurationMs)} total
                     </span>
                   ) : null}
                 </div>
 
-                <p className="mt-3 font-grotesk text-sm leading-relaxed text-foreground/80">
+                <p className="mt-2 font-grotesk text-xs leading-relaxed text-foreground/80 sm:text-sm">
                   {album.description}
                 </p>
 
-                <div className="mt-3 flex flex-wrap gap-1">
+                <div className="mt-2 flex flex-wrap gap-1">
                   {album.genres.map((g) => (
                     <span
                       key={g}
-                      className="rounded-full border border-white/15 px-2 py-0.5 font-mono-funk text-[9px] tracking-wide text-foreground/70"
+                      className="rounded-full border border-white/15 px-1.5 py-0.5 font-mono-funk text-[8px] tracking-wide text-foreground/70 sm:text-[9px]"
                     >
                       {g}
                     </span>
                   ))}
                 </div>
 
-                {/* Account actions */}
                 <AccountActions album={album} />
               </div>
             </div>
 
-            {/* Tracklist body */}
-            <div className="flex-1 overflow-y-auto p-2 sm:p-3 scrollbar-funky">
+            {/* Tracklist + Footer in one scrollable flow */}
+            <div className="p-2 sm:p-3">
               {loading ? (
-                <div className="flex flex-col items-center justify-center py-16">
-                  <Loader2 className="size-6 animate-spin text-lime" />
-                  <p className="mt-3 font-mono-funk text-[11px] tracking-wider text-muted-foreground">
+                <div className="flex flex-col items-center justify-center py-10">
+                  <Loader2 className="size-5 animate-spin text-lime" />
+                  <p className="mt-2 font-mono-funk text-[10px] tracking-wider text-muted-foreground">
                     loading tracklist…
                   </p>
                 </div>
               ) : error ? (
-                <div className="flex flex-col items-center justify-center py-16">
-                  <p className="font-grotesk text-sm text-destructive">{error}</p>
+                <div className="flex flex-col items-center justify-center py-10">
+                  <p className="font-grotesk text-xs text-destructive sm:text-sm">{error}</p>
                 </div>
               ) : !data || data.tracks.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <Disc3 className="size-8 text-grape" />
-                  <p className="mt-3 font-grotesk text-sm text-muted-foreground">
+                <div className="flex flex-col items-center justify-center py-10 text-center">
+                  <Disc3 className="size-6 text-grape sm:size-8" />
+                  <p className="mt-2 font-grotesk text-xs text-muted-foreground sm:text-sm">
                     No tracklist found for this one. The vinyl's still sealed in our crate.
                   </p>
                 </div>
@@ -280,29 +279,28 @@ export function AlbumModal({ album, onClose }: { album: Album | null; onClose: (
                     return (
                       <li
                         key={`${t.number}-${t.name}`}
-                        className="group flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-white/5"
+                        className="group flex items-center gap-2 rounded-lg px-1 py-1.5 transition-colors hover:bg-white/5 sm:gap-3 sm:px-2 sm:py-2"
                       >
-                        <span className="w-6 shrink-0 text-center font-mono-funk text-[11px] text-muted-foreground">
+                        <span className="w-5 shrink-0 text-center font-mono-funk text-[10px] text-muted-foreground sm:w-6 sm:text-[11px]">
                           {t.number.toString().padStart(2, "0")}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p className={cn("truncate font-grotesk text-sm", isPlaying ? "text-lime" : "text-foreground")}>
+                          <p className={cn("truncate font-grotesk text-xs sm:text-sm", isPlaying ? "text-lime" : "text-foreground")}>
                             {t.name}
                           </p>
                           {t.featuring ? (
-                            <p className="flex items-center gap-1 truncate font-mono-funk text-[10px] tracking-wide text-hotpink">
-                              <User className="size-2.5" /> feat. {t.featuring}
+                            <p className="flex items-center gap-1 truncate font-mono-funk text-[9px] tracking-wide text-hotpink sm:text-[10px]">
+                              <User className="size-2 sm:size-2.5" /> feat. {t.featuring}
                             </p>
                           ) : null}
                         </div>
-                        {/* Play / 30s preview button */}
                         <button
                           type="button"
                           onClick={() => togglePlay(t.previewUrl)}
                           disabled={!t.previewUrl}
                           aria-label={t.previewUrl ? (isPlaying ? "Stop preview" : "Play 30s preview") : "No preview available"}
                           className={cn(
-                            "flex size-7 shrink-0 items-center justify-center rounded-full transition-all",
+                            "flex size-6 shrink-0 items-center justify-center rounded-full transition-all sm:size-7",
                             t.previewUrl
                               ? isPlaying
                                 ? "bg-lime text-black hover:scale-110"
@@ -312,12 +310,12 @@ export function AlbumModal({ album, onClose }: { album: Album | null; onClose: (
                           title={t.previewUrl ? (isPlaying ? "Stop" : "Play 30s") : "No preview"}
                         >
                           {t.previewUrl ? (
-                            isPlaying ? <Square className="size-3" /> : <Play className="size-3" />
+                            isPlaying ? <Square className="size-2.5 sm:size-3" /> : <Play className="size-2.5 sm:size-3" />
                           ) : (
-                            <Ban className="size-3" />
+                            <Ban className="size-2.5 sm:size-3" />
                           )}
                         </button>
-                        <span className="shrink-0 font-mono-funk text-[11px] tracking-wider text-muted-foreground">
+                        <span className="shrink-0 font-mono-funk text-[10px] tracking-wider text-muted-foreground sm:text-[11px]">
                           {fmtDuration(t.durationMs)}
                         </span>
                       </li>
@@ -325,35 +323,35 @@ export function AlbumModal({ album, onClose }: { album: Album | null; onClose: (
                   })}
                 </ol>
               )}
-            </div>
 
-            {/* Footer */}
-            <div className="flex items-center justify-between border-t border-white/10 bg-black/30 px-4 py-2.5 font-mono-funk text-[10px] tracking-wider text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                <Music2 className="size-3 text-lime" />
-                {data?.cached ? "from cache" : "fetched live"}
-              </span>
-              <span className="flex items-center gap-2">
-                <button
-                  onClick={reloadTracklist}
-                  disabled={loading}
-                  className="flex items-center gap-1 rounded px-1.5 py-0.5 transition hover:text-foreground disabled:opacity-40"
-                  title="Reload tracklist from Deezer"
-                >
-                  <RotateCcw className={`size-3 ${loading ? "animate-spin" : ""}`} />
-                  RELOAD
-                </button>
-                {album.collectionId ? (
-                  <a
-                    href={`https://music.apple.com/album/${album.collectionId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 transition-colors hover:text-foreground"
+              {/* Footer inline */}
+              <div className="mt-3 flex items-center justify-between border-t border-white/10 px-1 pt-2 font-mono-funk text-[9px] tracking-wider text-muted-foreground sm:px-0 sm:text-[10px]">
+                <span className="flex items-center gap-1">
+                  <Music2 className="size-2.5 text-lime sm:size-3" />
+                  {data?.cached ? "from cache" : "fetched live"}
+                </span>
+                <span className="flex items-center gap-1.5 sm:gap-2">
+                  <button
+                    onClick={reloadTracklist}
+                    disabled={loading}
+                    className="flex items-center gap-0.5 rounded px-1 py-0.5 transition hover:text-foreground disabled:opacity-40 sm:gap-1"
+                    title="Reload tracklist from Deezer"
                   >
-                    Apple Music <ExternalLink className="size-3" />
-                  </a>
-                ) : null}
-              </span>
+                    <RotateCcw className={`size-2.5 sm:size-3 ${loading ? "animate-spin" : ""}`} />
+                    RELOAD
+                  </button>
+                  {album.collectionId ? (
+                    <a
+                      href={`https://music.apple.com/album/${album.collectionId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-0.5 transition-colors hover:text-foreground sm:gap-1"
+                    >
+                      Apple Music <ExternalLink className="size-2.5 sm:size-3" />
+                    </a>
+                  ) : null}
+                </span>
+              </div>
             </div>
           </motion.div>
         </motion.div>

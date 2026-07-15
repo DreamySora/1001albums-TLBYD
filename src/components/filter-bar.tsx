@@ -358,15 +358,15 @@ export function FilterBar({
 
       {/* Row 3: letters + duration + active filters */}
       <div className="border-t border-white/5">
-        <div className="mx-auto flex max-w-[1800px] flex-wrap items-center gap-x-2 gap-y-1 px-1.5 py-1 sm:gap-x-4 sm:gap-y-2 sm:px-3 sm:py-2">
+        <div className="mx-auto flex max-w-[1800px] flex-wrap items-center gap-x-1.5 gap-y-0.5 px-1 py-0.5 sm:gap-x-4 sm:gap-y-2 sm:px-3 sm:py-2">
           {/* letters - responsive grid on mobile */}
-          <div className="flex flex-wrap items-center gap-0.5">
+          <div className="flex flex-wrap items-center gap-px sm:gap-0.5">
             {LETTERS.map((L) => (
               <button
                 key={L}
                 onClick={() => setFilters({ ...filters, letter: filters.letter === L ? null : L })}
                 className={cn(
-                  "size-7 sm:size-5 rounded font-mono-funk text-[11px] sm:text-[10px] transition-all",
+                  "size-5 sm:size-5 rounded font-mono-funk text-[9px] sm:text-[10px] transition-all",
                   filters.letter === L
                     ? "bg-lime text-black"
                     : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
@@ -380,13 +380,13 @@ export function FilterBar({
           <div className="hidden h-4 w-px bg-white/10 sm:block" />
 
           {/* duration */}
-          <div className="flex items-center gap-0.5">
+          <div className="flex items-center gap-px sm:gap-0.5">
             {DURATION_BUCKETS.map((b) => (
               <button
                 key={b.id}
                 onClick={() => setFilters({ ...filters, duration: b.id })}
                 className={cn(
-                  "rounded-md px-2 py-1 sm:px-1.5 sm:py-0.5 font-mono-funk text-[10px] sm:text-[9px] tracking-wide transition-all min-h-[32px] sm:min-h-0",
+                  "rounded-sm px-1 py-0.5 sm:px-1.5 sm:py-0.5 font-mono-funk text-[8px] sm:text-[9px] tracking-wide transition-all",
                   filters.duration === b.id
                     ? "bg-grape text-white"
                     : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
