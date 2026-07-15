@@ -4,8 +4,9 @@ import { ALBUMS } from "@/data/albums";
 import { matchScore, MATCH_THRESHOLD } from "@/lib/itunes-match";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
-const CACHE_DIR = "/home/z/my-project/src/data/tracklists";
+const CACHE_DIR = "/tmp/tracklists";
 if (!existsSync(CACHE_DIR)) mkdirSync(CACHE_DIR, { recursive: true });
 
 type Track = {
@@ -45,7 +46,7 @@ function parseFeaturing(trackName: string, artistName: string): { name: string; 
 async function fetchTracklist(collectionId: number, expectedArtist: string, expectedTitle: string): Promise<{ tracks: Track[] | null; verified: boolean }> {
   const url = `https://itunes.apple.com/lookup?id=${collectionId}&entity=song&limit=200`;
   const ctrl = new AbortController();
-  const to = setTimeout(() => ctrl.abort(), 12000);
+  const to = setTimeout(() => ctrl.abort(), 8000);
   try {
     const res = await fetch(url, { signal: ctrl.signal });
     if (!res.ok) return { tracks: null, verified: false };
@@ -113,7 +114,7 @@ async function mbFindRelease(artist: string, title: string): Promise<string | nu
   const q = `release:"${title}" AND artist:"${artist}"`;
   const url = `https://musicbrainz.org/ws/2/release/?query=${encodeURIComponent(q)}&fmt=json&limit=5`;
   const ctrl = new AbortController();
-  const to = setTimeout(() => ctrl.abort(), 12000);
+  const to = setTimeout(() => ctrl.abort(), 8000);
   try {
     const res = await fetch(url, { headers: { "User-Agent": MB_UA, Accept: "application/json" }, signal: ctrl.signal });
     if (!res.ok) return null;
@@ -141,7 +142,7 @@ async function mbFindRelease(artist: string, title: string): Promise<string | nu
 async function mbFetchRecordings(mbid: string, artist: string): Promise<Track[] | null> {
   const url = `https://musicbrainz.org/ws/2/release/${mbid}?inc=recordings&fmt=json`;
   const ctrl = new AbortController();
-  const to = setTimeout(() => ctrl.abort(), 12000);
+  const to = setTimeout(() => ctrl.abort(), 8000);
   let artistName = artist;
   let rawTracks: { title: string; length: number | null }[] = [];
   try {
@@ -218,7 +219,7 @@ async function findCollectionId(artist: string, title: string): Promise<number |
   const term = encodeURIComponent(`${artist} ${title}`);
   const url = `https://itunes.apple.com/search?term=${term}&entity=album&limit=10`;
   const ctrl = new AbortController();
-  const to = setTimeout(() => ctrl.abort(), 10000);
+  const to = setTimeout(() => ctrl.abort(), 8000);
   try {
     const res = await fetch(url, { signal: ctrl.signal });
     if (!res.ok) return null;
@@ -254,13 +255,14 @@ export async function GET(req: NextRequest) {
   }
 
   const cacheFile = `${CACHE_DIR}/${albumId}.json`;
-  if (existsSync(cacheFile)) {
-    try {
-      const cached = JSON.parse(readFileSync(cacheFile, "utf-8")) as TracklistResponse;
-      return NextResponse.json({ ...cached, cached: true });
-    } catch {
-      // fall through to fetch
+  let cachedData: TracklistResponse | null = null;
+  try {
+    if (existsSync(cacheFile)) {
+      cachedData = JSON.parse(readFileSync(cacheFile, "utf-8")) as TracklistResponse;
+      return NextResponse.json({ ...cachedData, cached: true });
     }
+  } catch {
+    // ignore cache read errors (e.g., Vercel read-only fs)
   }
 
   const cid = album.collectionId ?? (await findCollectionId(album.artist, album.title));
