@@ -2,7 +2,7 @@
 
 import { useTheme } from "next-themes";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sun, Moon, Menu, X, Disc3, Shuffle, RotateCcw, User, Headphones, Compass } from "lucide-react";
+import { Sun, Moon, Menu, X, Disc3, Shuffle, RotateCcw, User, Compass, Dice6, Music } from "lucide-react";
 import Link from "next/link";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { useState } from "react";
@@ -14,21 +14,21 @@ export function TopNav({ active }: { active: "home" | "random" | "wheel" | "acco
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 h-14 bg-background/90 backdrop-blur-xl border-b border-white/10">
       <div className="mx-auto flex h-full max-w-[1800px] items-center justify-between px-3 sm:px-5">
-        <Link href="/" className="flex items-center gap-1.5 font-display text-lg uppercase tracking-tight text-foreground" aria-label="Home">
+        <Link href="/" className="flex items-center gap-2 font-display text-lg uppercase tracking-tight text-foreground" aria-label="Home">
           <Disc3 className="size-5 text-hotpink animate-[spin_8s_linear_infinite]" />
           <span className="hidden sm:inline-block font-display text-xl tracking-tight">
             1001<span className="text-lime">.</span> ALBUMS TO LISTEN BEFORE YOU DIE
           </span>
-          <span className="hidden sm:inline-block font-mono-funk text-[10px] tracking-widest text-lime/70 uppercase">
-            NO METAL · NO COUNTRY · NO FILLER
+          <span className="hidden sm:inline-block font-mono-funk text-[10px] tracking-widest text-lime/60 uppercase">
+            HAND-PICKED CRATE
           </span>
         </Link>
 
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-1">
           <NavLink href="/" label="Browse" active={active === "home"}><Compass className="size-4" /></NavLink>
-          <NavLink href="/random" label="Random" active={active === "random"}><Shuffle className="size-4" /></NavLink>
-          <NavLink href="/wheel" label="Wheel" active={active === "wheel"}><RotateCcw className="size-4" /></NavLink>
+          <NavLink href="/random" label="Random" active={active === "random"}><Dice6 className="size-4" /></NavLink>
+          <NavLink href="/wheel" label="Wheel" active={active === "wheel"}><Music className="size-4" /></NavLink>
           <NavLink href="/account" label="Account" active={active === "account"}><User className="size-4" /></NavLink>
           <ThemeToggle />
         </div>
@@ -55,8 +55,8 @@ export function TopNav({ active }: { active: "home" | "random" | "wheel" | "acco
           >
             <div className="flex flex-col gap-2">
               <NavLink href="/" label="Browse" active={active === "home"} className="justify-start px-3 py-2 text-base"><Compass className="size-5 mr-3" /> Browse</NavLink>
-              <NavLink href="/random" label="Random" active={active === "random"} className="justify-start px-3 py-2 text-base"><Shuffle className="size-5 mr-3" /> Random</NavLink>
-              <NavLink href="/wheel" label="Wheel" active={active === "wheel"} className="justify-start px-3 py-2 text-base"><RotateCcw className="size-5 mr-3" /> Wheel</NavLink>
+              <NavLink href="/random" label="Random" active={active === "random"} className="justify-start px-3 py-2 text-base"><Dice6 className="size-5 mr-3" /> Random</NavLink>
+              <NavLink href="/wheel" label="Wheel" active={active === "wheel"} className="justify-start px-3 py-2 text-base"><Music className="size-5 mr-3" /> Wheel</NavLink>
               <NavLink href="/account" label="Account" active={active === "account"} className="justify-start px-3 py-2 text-base"><User className="size-5 mr-3" /> Account</NavLink>
             </div>
             <ThemeToggle className="mt-2 mb-1" />
