@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useCallback, Suspense } from "react";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Disc3, Loader2, Ghost, ArrowUp } from "lucide-react";
 import { Hero } from "@/components/hero";
@@ -20,51 +19,22 @@ import {
 const INITIAL_VISIBLE = 48;
 const LOAD_STEP = 48;
 
-function filtersToParams(f: Filters): URLSearchParams {
-  const params = new URLSearchParams();
-  if (f.search) params.set("q", f.search);
-  if (f.genres.length) params.set("genres", f.genres.join(","));
-  if (f.artist) params.set("artist", f.artist);
-  if (f.letter) params.set("letter", f.letter);
-  if (f.duration !== "all") params.set("duration", f.duration);
-  if (f.sort !== "default") params.set("sort", f.sort);
-  return params;
-}
-
-function paramsToFilters(params: URLSearchParams): Filters {
-  return {
-    search: params.get("q") ?? "",
-    genres: params.get("genres")?.split(",").filter(Boolean) ?? [],
-    artist: params.get("artist") ?? null,
-    letter: params.get("letter") ?? null,
-    duration: (params.get("duration") as Filters["duration"]) ?? "all",
-    sort: (params.get("sort") as Filters["sort"]) ?? "default",
-  };
-}
-
-function PageContent() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
-
+export default function Page() {
   const [albums, setAlbums] = useState<Album[]>([]);
   const [genres, setGenres] = useState<GenreInfo[]>([]);
   const [artists, setArtists] = useState<ArtistInfo[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Initialize filters from URL params
-  const [filters, setFilters] = useState<Filters>(() => paramsToFilters(searchParams));
+  const [filters, setFilters] = useState<Filters>({
+    search: "",
+    genres: [],
+    artist: null,
+    letter: null,
+    duration: "all",
+    sort: "default",
+  });
   const [visible, setVisible] = useState(INITIAL_VISIBLE);
   const [openAlbum, setOpenAlbum] = useState<Album | null>(null);
-
-  // Sync filters to URL
-  useEffect(() => {
-    const params = filtersToParams(filters);
-    const newUrl = `${pathname}?${params.toString()}`;
-    if (newUrl !== window.location.href) {
-      router.replace(newUrl, { scroll: false });
-    }
-  }, [filters, router, pathname]);
 
   useEffect(() => {
     let alive = true;
@@ -122,58 +92,6 @@ function PageContent() {
 
   const onOpen = useCallback((a: Album) => setOpenAlbum(a), []);
 
-  // Keyboard navigation for album grid
-  useEffect(() => {
-    if (openAlbum) return; // Don't navigate grid when modal is open
-    
-    const onKeyDown = (e: KeyboardEvent) => {
-      // Focus search on '/' key (when not typing in input)
-      if (e.key === "/" && e.target instanceof HTMLElement && e.target.tagName !== "INPUT" && e.target.tagName !== "TEXTAREA") {
-        e.preventDefault();
-        const searchInput = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
-        searchInput?.focus();
-        return;
-      }
-      
-      const cards = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-album-card]'));
-      const focusedIndex = cards.findIndex((c) => c === document.activeElement);
-      
-      if (focusedIndex >= 0) {
-        const getGridCols = () => {
-          const w = window.innerWidth;
-          if (w >= 1536) return 7; // 2xl
-          if (w >= 1280) return 6; // xl
-          if (w >= 1024) return 5; // lg
-          if (w >= 768) return 4; // md
-          if (w >= 640) return 3; // sm
-          return 2;
-        };
-        
-        if (e.key === "ArrowRight") {
-          e.preventDefault();
-          cards[(focusedIndex + 1) % cards.length]?.focus();
-        } else if (e.key === "ArrowLeft") {
-          e.preventDefault();
-          cards[(focusedIndex - 1 + cards.length) % cards.length]?.focus();
-        } else if (e.key === "ArrowDown") {
-          e.preventDefault();
-          const cols = getGridCols();
-          cards[Math.min(focusedIndex + cols, cards.length - 1)]?.focus();
-        } else if (e.key === "ArrowUp") {
-          e.preventDefault();
-          const cols = getGridCols();
-          cards[Math.max(focusedIndex - cols, 0)]?.focus();
-        } else if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          cards[focusedIndex]?.click();
-        }
-      }
-    };
-    
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [openAlbum, filtered.length]);
-
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <TopNav active="home" />
@@ -213,7 +131,7 @@ function PageContent() {
             </div>
 
             <motion.div
-              className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7"
+              className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
             >
               <AnimatePresence>
                 {shown.map((a, i) => (
@@ -241,17 +159,9 @@ function PageContent() {
   );
 }
 
-export default function Page() {
-  return (
-    <Suspense fallback={<SkeletonGrid />}>
-      <PageContent />
-    </Suspense>
-  );
-}
-
 function SkeletonGrid() {
   return (
-    <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
+    <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
       {Array.from({ length: 20 }).map((_, i) => (
         <div key={i} className="flex flex-col">
           <div className="aspect-square animate-pulse rounded-xl bg-card ring-1 ring-white/10" />
