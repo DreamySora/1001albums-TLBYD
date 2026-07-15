@@ -132,7 +132,7 @@ export default function RandomPage() {
             >
               <button
                 onClick={() => setOpenAlbum(picked)}
-                className="relative aspect-square w-64 overflow-hidden rounded-xl ring-1 ring-white/10 transition hover:scale-105"
+                className="relative aspect-square w-full max-w-xs overflow-hidden rounded-xl ring-1 ring-white/10 transition hover:scale-105"
                 style={{ boxShadow: "0 20px 60px -20px var(--hotpink)" }}
               >
                 {picked.cover ? (

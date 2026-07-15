@@ -1,0 +1,42 @@
+{
+  "name": "1001 Albums To Hear Before You Die",
+  "short_name": "1001 Albums",
+  "description": "A funky, hand-picked crate of essential records. Filter by genre, artist, letter and length. No metal, no country — just the good stuff.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#ff4d8d",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["music", "entertainment", "lifestyle"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Random Pick",
+      "short_name": "Random",
+      "description": "Roll the dice for a random album",
+      "url": "/random",
+      "icons": [{ "src": "/icon-192.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Spin the Wheel",
+      "short_name": "Wheel",
+      "description": "Spin the wheel of fate",
+      "url": "/wheel",
+      "icons": [{ "src": "/icon-192.svg", "sizes": "192x192" }]
+    }
+  ]
+}
