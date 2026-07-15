@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Music2, Clock, User, Loader2, Disc3, ExternalLink, Play, Square, Ban, Heart, CheckCircle2 } from "lucide-react";
+import { X, Music2, Clock, User, Loader2, Disc3, ExternalLink, Play, Square, Ban, Heart, CheckCircle2, RotateCcw } from "lucide-react";
 import type { Album } from "@/lib/albums-client";
 import { cn } from "@/lib/utils";
 import { useAccount, Stars } from "@/lib/account";
@@ -40,11 +40,14 @@ function hashStr(s: string, n: number) {
   return h % n;
 }
 
+const tracklistCache = new Map<number, TracklistData>();
+
 export function AlbumModal({ album, onClose }: { album: Album | null; onClose: () => void }) {
   const [data, setData] = useState<TracklistData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [playingUrl, setPlayingUrl] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const togglePlay = (url: string | null) => {
@@ -83,36 +86,57 @@ export function AlbumModal({ album, onClose }: { album: Album | null; onClose: (
     setLoading(true);
     setError(null);
     setData(null);
+
+    const cached = tracklistCache.get(album.id);
+    if (cached && refreshKey === 0) {
+      setData(cached);
+      setLoading(false);
+      fetchAlbumDescription(album, alive);
+      return;
+    }
+
     (async () => {
       try {
-        const res = await fetch(`/api/tracklist?albumId=${album.id}`);
+        const isReload = refreshKey > 0;
+        const src = isReload ? "deezer" : "auto";
+        const res = await fetch(`/api/tracklist?albumId=${album.id}&source=${src}${isReload ? `&refresh=${refreshKey}` : ""}`);
         if (!res.ok) throw new Error("Failed to load tracklist");
         const json = (await res.json()) as TracklistData;
-        if (alive) setData(json);
+        if (alive) {
+          setData(json);
+          if (json.tracks.length > 0) tracklistCache.set(album.id, json);
+        }
       } catch (e) {
         if (alive) setError(e instanceof Error ? e.message : "Unknown error");
       } finally {
         if (alive) setLoading(false);
       }
     })();
-    // If the album came from the light list (no description), fetch full detail.
+    fetchAlbumDescription(album, alive);
+
+    return () => {
+      alive = false;
+    };
+  }, [album, refreshKey]);
+
+  function fetchAlbumDescription(album: Album, alive: boolean) {
     if (!album.description) {
       fetch(`/api/album?id=${album.id}`)
         .then((r) => r.json())
         .then((full) => {
           if (alive && full?.description) {
-            // mutate album object in place so description renders
             (album as Album).description = full.description;
-            // force re-render
             setData((d) => (d ? { ...d } : d));
           }
         })
         .catch(() => {});
     }
-    return () => {
-      alive = false;
-    };
-  }, [album]);
+  }
+
+  const reloadTracklist = () => {
+    setRefreshKey((k) => k + 1);
+    tracklistCache.delete(album?.id ?? -1);
+  };
 
   useEffect(() => {
     if (album) {
@@ -145,11 +169,17 @@ export function AlbumModal({ album, onClose }: { album: Album | null; onClose: (
             exit={{ y: 40, opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             onClick={(e) => e.stopPropagation()}
-            className="relative flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-t-2xl border border-white/10 bg-card shadow-2xl sm:rounded-2xl"
+            drag="y"
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={0.2}
+            onDragEnd={(_, info) => {
+              if (info.offset.y > 120) onClose();
+            }}
+            className="relative flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-t-2xl border border-white/10 bg-card shadow-2xl sm:rounded-2xl sm:cursor-default cursor-grab active:cursor-grabbing"
             style={{ boxShadow: `0 -10px 80px -20px ${accent}` }}
           >
             {/* Header: cover + meta */}
-            <div className="relative flex flex-col gap-4 border-b border-white/10 p-5 sm:flex-row sm:p-6">
+            <div className="relative flex flex-col gap-4 border-b border-white/10 p-4 pt-6 sm:flex-row sm:p-6">
               <div
                 className="relative aspect-square w-full shrink-0 overflow-hidden rounded-xl ring-1 ring-white/10 sm:w-36"
                 style={{ boxShadow: `0 8px 30px -10px ${accent}` }}
@@ -303,16 +333,27 @@ export function AlbumModal({ album, onClose }: { album: Album | null; onClose: (
                 <Music2 className="size-3 text-lime" />
                 {data?.cached ? "from cache" : "fetched live"}
               </span>
-              {album.collectionId ? (
-                <a
-                  href={`https://music.apple.com/album/${album.collectionId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1 transition-colors hover:text-foreground"
+              <span className="flex items-center gap-2">
+                <button
+                  onClick={reloadTracklist}
+                  disabled={loading}
+                  className="flex items-center gap-1 rounded px-1.5 py-0.5 transition hover:text-foreground disabled:opacity-40"
+                  title="Reload tracklist from Deezer"
                 >
-                  Apple Music <ExternalLink className="size-3" />
-                </a>
-              ) : null}
+                  <RotateCcw className={`size-3 ${loading ? "animate-spin" : ""}`} />
+                  RELOAD
+                </button>
+                {album.collectionId ? (
+                  <a
+                    href={`https://music.apple.com/album/${album.collectionId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 transition-colors hover:text-foreground"
+                  >
+                    Apple Music <ExternalLink className="size-3" />
+                  </a>
+                ) : null}
+              </span>
             </div>
           </motion.div>
         </motion.div>

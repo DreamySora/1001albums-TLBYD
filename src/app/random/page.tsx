@@ -83,7 +83,7 @@ export default function RandomPage() {
               </button>
             )}
           </div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-funky sm:flex-wrap">
             {genres.slice(0, 80).map((g) => {
               const active = selected.includes(g.name);
               return (

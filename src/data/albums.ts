@@ -4,6 +4,7 @@ import { raw3 } from "./raw-3";
 import { raw4 } from "./raw-4";
 import { raw5 } from "./raw-5";
 import { raw6 } from "./raw-6";
+import { raw7 } from "./raw-7";
 import coversCache from "./covers-keyed.json";
 
 export type Album = {
@@ -18,7 +19,7 @@ export type Album = {
   collectionId: number | null; // iTunes collectionId for tracklist lookup
 };
 
-const allRaw = [...raw1, ...raw2, ...raw3, ...raw4, ...raw5, ...raw6];
+const allRaw = [...raw1, ...raw2, ...raw3, ...raw4, ...raw5, ...raw6, ...raw7];
 const covers = coversCache as Record<string, { url: string | null; status: string; cid?: number }>;
 
 function coverKey(artist: string, title: string): string {
@@ -36,6 +37,7 @@ const FORBIDDEN_EXACT = [
   "metal", "heavy metal", "thrash", "death metal", "black metal", "doom metal", "sludge", "grindcore",
   "country", "country rock", "country pop", "alt-country", "country soul",
   "edm", "dubstep", "hardcore", "happy hardcore", "uk hardcore", "frenchcore",
+  "krautrock",
 ];
 
 function isForbidden(genres: string[]): boolean {
@@ -58,6 +60,25 @@ import { FEMALE_ARTISTS } from "./female-set";
 // Cap for albums tagged "Electronic" — keep ~150 (reduced from 200 per user request).
 const MAX_ELECTRONIC = 150;
 
+// Reduce post-punk and psychedelic to roughly half.
+let postPunkSeen = 0;
+let psychSeen = 0;
+
+function shouldSkipHalf(genres: string[], counterKey: "postpunk" | "psych"): boolean {
+  if (counterKey === "postpunk" && genres.some((g) => g.toLowerCase().includes("post-punk"))) {
+    postPunkSeen++;
+    return postPunkSeen % 2 === 0; // skip every other
+  }
+  if (counterKey === "psych") {
+    const hasPsych = genres.some((g) => g.toLowerCase().includes("psych"));
+    if (hasPsych) {
+      psychSeen++;
+      return psychSeen % 2 === 0; // skip every other
+    }
+  }
+  return false;
+}
+
 // Build unique album list with max 2 per artist + Electronic cap.
 const seenKeys = new Set<string>();
 const perArtist = new Map<string, number>();
@@ -70,6 +91,8 @@ for (const [artist, title, year, genreStr, duration, description] of allRaw) {
   const genres = genreStr.split("|").map((g) => g.trim()).filter(Boolean);
   if (genres.length < 5) continue; // require at least 5 genres
   if (isForbidden(genres)) continue;
+  if (shouldSkipHalf(genres, "postpunk")) continue;
+  if (shouldSkipHalf(genres, "psych")) continue;
 
   const artistKey = artist.toLowerCase().trim();
   const titleKey = cleanTitle.toLowerCase().trim();

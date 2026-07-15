@@ -5,10 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sun, Moon, Menu, X, Disc3, User, Compass, Dice6, Music } from "lucide-react";
 import Link from "next/link";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export function TopNav({ active }: { active: "home" | "random" | "wheel" | "account" }) {
-  const { theme, setTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -37,7 +36,7 @@ export function TopNav({ active }: { active: "home" | "random" | "wheel" | "acco
 
         {/* Mobile menu button */}
         <button
-          className="md:hidden flex size-9 items-center justify-center rounded-full border border-white/15 bg-card/60 text-foreground transition hover:border-hotpink"
+          className="md:hidden flex size-10 items-center justify-center rounded-full border border-white/15 bg-card/60 text-foreground transition hover:border-hotpink"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
           aria-expanded={mobileOpen}
@@ -71,16 +70,26 @@ export function TopNav({ active }: { active: "home" | "random" | "wheel" | "acco
 
 function ThemeToggle({ className = "" }: { className?: string }) {
   const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const isDark = theme === "dark";
+  if (!mounted) {
+    return (
+      <div className={`flex size-9 items-center justify-center ${className}`}>
+        <Moon className="size-4 text-muted-foreground/50" />
+      </div>
+    );
+  }
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <button
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          onClick={() => setTheme(isDark ? "light" : "dark")}
           className={`flex size-9 items-center justify-center rounded-full border border-white/15 bg-card/60 text-foreground transition hover:border-hotpink hover:text-hotpink ${className}`}
-          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
         >
           <AnimatePresence mode="wait">
-            {theme === "dark" ? (
+            {isDark ? (
               <motion.span key="moon" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }}><Moon className="size-4" /></motion.span>
             ) : (
               <motion.span key="sun" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }}><Sun className="size-4" /></motion.span>
@@ -88,7 +97,7 @@ function ThemeToggle({ className = "" }: { className?: string }) {
           </AnimatePresence>
         </button>
       </TooltipTrigger>
-      <TooltipContent side="bottom">{theme === "dark" ? "Light mode" : "Dark mode"}</TooltipContent>
+      <TooltipContent side="bottom">{isDark ? "Light mode" : "Dark mode"}</TooltipContent>
     </Tooltip>
   );
 }

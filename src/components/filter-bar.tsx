@@ -18,7 +18,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 
 const ACCENTS = ["var(--hotpink)", "var(--lime)", "var(--amber)", "var(--grape)", "var(--cyan)"];
 function hashStr(s: string, n: number) {
@@ -79,9 +79,9 @@ export function FilterBar({
   const visibleOtherGenres = showAllGenres ? otherGenres : otherGenres.slice(0, 100);
 
   return (
-    <div className="sticky top-14 z-40 border-y border-white/10 bg-background/85 backdrop-blur-xl sm:top-[57px]">
+    <div className="sticky top-14 z-40 border-y border-white/10 bg-background/85 backdrop-blur-xl">
       {/* Row 1: search + sort + artist + count */}
-      <div className="mx-auto flex max-w-[1800px] flex-wrap items-center gap-1.5 px-2 py-2 sm:gap-2 sm:px-3 sm:py-2.5">
+      <div className="mx-auto flex max-w-[1800px] flex-wrap items-center gap-1 px-1.5 py-1.5 sm:gap-2 sm:px-3 sm:py-2.5">
         <div className="relative min-w-[140px] flex-1 sm:min-w-[200px]">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -106,46 +106,59 @@ export function FilterBar({
           ))}
         </select>
 
-        {/* artist picker - Popover on desktop, Sheet on mobile */}
+        {/* artist picker - Sheet on mobile, Popover on desktop (mutually exclusive) */}
+
+        {/* Mobile: Sheet */}
+        <Sheet>
+          <SheetTrigger asChild>
+            <button className="sm:hidden flex h-8 items-center gap-1 rounded-md border border-white/15 bg-card/60 px-2.5 font-mono-funk text-[10px] tracking-wide text-foreground transition hover:border-lime">
+              <Users className="size-3" /> ARTISTS
+            </button>
+          </SheetTrigger>
+          <SheetContent className="w-full max-w-sm p-0" side="bottom">
+            <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
+              <span className="font-mono-funk text-[10px] tracking-wider text-muted-foreground uppercase">Artists</span>
+              <SheetClose className="rounded-full bg-white/10 p-1.5 text-foreground transition hover:bg-white/20">
+                <X className="size-4" />
+              </SheetClose>
+            </div>
+            <div className="sticky top-0 bg-popover p-1.5 pb-1">
+              <Input
+                placeholder="Filter artists…"
+                value={artistSearch}
+                onChange={(e) => setArtistSearch(e.target.value.toLowerCase())}
+                className="h-9 border-white/15 bg-card/60 font-grotesk text-sm"
+                id="artist-filter-mobile"
+              />
+            </div>
+            <div className="max-h-[55vh] overflow-y-auto p-0.5 scrollbar-funky">
+              {artists
+                .filter((a) => a.name.toLowerCase().includes(artistSearch))
+                .map((a) => (
+                  <button
+                    key={a.name}
+                    onClick={() => {
+                      setFilters({ ...filters, artist: filters.artist === a.name ? null : a.name });
+                    }}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded px-3 py-2 text-left font-grotesk text-sm transition min-h-[44px]",
+                      filters.artist === a.name ? "bg-hotpink text-black" : "hover:bg-white/5"
+                    )}
+                  >
+                    <span className="truncate">{a.name}</span>
+                    <span className="ml-2 shrink-0 font-mono-funk text-[10px] opacity-60">{a.count}</span>
+                  </button>
+                ))}
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        {/* Desktop: Popover */}
         <Popover>
           <PopoverTrigger asChild>
-            <Sheet>
-              <SheetTrigger asChild>
-                <button className="flex h-8 items-center gap-1 rounded-md border border-white/15 bg-card/60 px-2.5 font-mono-funk text-[10px] tracking-wide text-foreground transition hover:border-lime sm:h-9 sm:px-3 sm:text-[11px]">
-                  <Users className="size-3 sm:size-3.5" /> <span className="hidden sm:inline">ARTISTS</span>
-                </button>
-              </SheetTrigger>
-              <SheetContent className="w-full max-w-sm p-0 sm:hidden">
-                <div className="sticky top-0 bg-popover p-1.5 pb-1">
-                  <Input
-                    placeholder="Filter artists…"
-                    value={artistSearch}
-                    onChange={(e) => setArtistSearch(e.target.value.toLowerCase())}
-                    className="h-7 border-white/15 bg-card/60 font-grotesk text-xs"
-                    id="artist-filter-mobile"
-                  />
-                </div>
-                <div className="max-h-[55vh] overflow-y-auto p-0.5 scrollbar-funky">
-                  {artists
-                    .filter((a) => a.name.toLowerCase().includes(artistSearch))
-                    .map((a) => (
-                      <button
-                        key={a.name}
-                        onClick={() => {
-                          setFilters({ ...filters, artist: filters.artist === a.name ? null : a.name });
-                        }}
-                        className={cn(
-                          "flex w-full items-center justify-between rounded px-2 py-1 text-left font-grotesk text-xs transition",
-                          filters.artist === a.name ? "bg-hotpink text-black" : "hover:bg-white/5"
-                        )}
-                      >
-                        <span className="truncate">{a.name}</span>
-                        <span className="ml-2 shrink-0 font-mono-funk text-[9px] opacity-60">{a.count}</span>
-                      </button>
-                    ))}
-                </div>
-              </SheetContent>
-            </Sheet>
+            <button className="hidden sm:flex h-9 items-center gap-1 rounded-md border border-white/15 bg-card/60 px-3 font-mono-funk text-[11px] tracking-wide text-foreground transition hover:border-lime">
+              <Users className="size-3.5" /> ARTISTS
+            </button>
           </PopoverTrigger>
           <PopoverContent
             className="max-h-[60vh] w-[320px] overflow-y-auto border-white/15 bg-popover p-0 scrollbar-funky"
@@ -193,7 +206,7 @@ export function FilterBar({
 
       {/* Row 2: Genre filter with Decades dropdown first */}
       <div className="border-t border-white/5">
-        <div className="mx-auto flex max-w-[1800px] items-center gap-1.5 px-2 py-1.5 sm:gap-2 sm:px-3 sm:py-2">
+        <div className="mx-auto flex max-w-[1800px] items-center gap-1 px-1.5 py-1 sm:gap-2 sm:px-3 sm:py-2">
           <SlidersHorizontal className="size-3 shrink-0 text-amber sm:size-3.5" />
 
           {/* Decades Dropdown */}
@@ -345,7 +358,7 @@ export function FilterBar({
 
       {/* Row 3: letters + duration + active filters */}
       <div className="border-t border-white/5">
-        <div className="mx-auto flex max-w-[1800px] flex-wrap items-center gap-x-3 gap-y-1.5 px-2 py-1.5 sm:gap-x-4 sm:gap-y-2 sm:px-3 sm:py-2">
+        <div className="mx-auto flex max-w-[1800px] flex-wrap items-center gap-x-2 gap-y-1 px-1.5 py-1 sm:gap-x-4 sm:gap-y-2 sm:px-3 sm:py-2">
           {/* letters - responsive grid on mobile */}
           <div className="flex flex-wrap items-center gap-0.5">
             {LETTERS.map((L) => (
@@ -353,7 +366,7 @@ export function FilterBar({
                 key={L}
                 onClick={() => setFilters({ ...filters, letter: filters.letter === L ? null : L })}
                 className={cn(
-                  "size-5 rounded font-mono-funk text-[10px] transition-all",
+                  "size-7 sm:size-5 rounded font-mono-funk text-[11px] sm:text-[10px] transition-all",
                   filters.letter === L
                     ? "bg-lime text-black"
                     : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
@@ -373,7 +386,7 @@ export function FilterBar({
                 key={b.id}
                 onClick={() => setFilters({ ...filters, duration: b.id })}
                 className={cn(
-                  "rounded-md px-1.5 py-0.5 font-mono-funk text-[9px] tracking-wide transition-all",
+                  "rounded-md px-2 py-1 sm:px-1.5 sm:py-0.5 font-mono-funk text-[10px] sm:text-[9px] tracking-wide transition-all min-h-[32px] sm:min-h-0",
                   filters.duration === b.id
                     ? "bg-grape text-white"
                     : "text-muted-foreground hover:bg-white/5 hover:text-foreground"

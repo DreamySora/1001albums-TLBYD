@@ -254,15 +254,45 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "album not found" }, { status: 404 });
   }
 
-  const cacheFile = `${CACHE_DIR}/${albumId}.json`;
-  let cachedData: TracklistResponse | null = null;
-  try {
-    if (existsSync(cacheFile)) {
-      cachedData = JSON.parse(readFileSync(cacheFile, "utf-8")) as TracklistResponse;
-      return NextResponse.json({ ...cachedData, cached: true });
+  const source = req.nextUrl.searchParams.get("source") ?? "auto";
+
+  // When source=deezer, skip iTunes/MB and go straight to Deezer (used by reload button).
+  if (source === "deezer") {
+    const dzTracks = await dzFetchTracklist(album.artist, album.title);
+    if (dzTracks && dzTracks.length) {
+      const totalDurationMs = dzTracks.reduce((s, t) => s + (t.durationMs ?? 0), 0) || null;
+      const payload: TracklistResponse = {
+        albumId,
+        collectionId: null,
+        totalDurationMs,
+        trackCount: dzTracks.length,
+        tracks: dzTracks,
+        cached: false,
+      };
+      return NextResponse.json(payload);
     }
-  } catch {
-    // ignore cache read errors (e.g., Vercel read-only fs)
+    return NextResponse.json({
+      albumId,
+      collectionId: null,
+      totalDurationMs: null,
+      trackCount: 0,
+      tracks: [],
+      cached: false,
+    });
+  }
+
+  const forceRefresh = req.nextUrl.searchParams.has("refresh");
+
+  const cacheFile = `${CACHE_DIR}/${albumId}.json`;
+  if (!forceRefresh) {
+    try {
+      if (existsSync(cacheFile)) {
+        const cachedData = JSON.parse(readFileSync(cacheFile, "utf-8")) as TracklistResponse;
+        return NextResponse.json({ ...cachedData, cached: true });
+      }
+    } catch {
+      // ignore cache read errors (e.g., Vercel read-only fs)
+    }
   }
 
   const cid = album.collectionId ?? (await findCollectionId(album.artist, album.title));
@@ -303,7 +333,23 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // Neither iTunes nor MB had the tracklist — return empty (honest, no wrong songs).
+  // Deezer fallback: free public API, no auth required.
+  const dzTracks = await dzFetchTracklist(album.artist, album.title);
+  if (dzTracks && dzTracks.length) {
+    const totalDurationMs = dzTracks.reduce((s, t) => s + (t.durationMs ?? 0), 0) || null;
+    const payload: TracklistResponse = {
+      albumId,
+      collectionId: cid ?? null,
+      totalDurationMs,
+      trackCount: dzTracks.length,
+      tracks: dzTracks,
+      cached: false,
+    };
+    try { writeFileSync(cacheFile, JSON.stringify(payload)); } catch {}
+    return NextResponse.json(payload);
+  }
+
+  // Neither iTunes, MB, nor Deezer had the tracklist — return empty.
   try { if (existsSync(cacheFile)) unlinkSync(cacheFile); } catch {}
   return NextResponse.json({
     albumId,
@@ -313,4 +359,51 @@ export async function GET(req: NextRequest) {
     tracks: [],
     cached: false,
   });
+}
+
+async function dzFetchTracklist(artist: string, title: string): Promise<Track[] | null> {
+  try {
+    const searchUrl = `https://api.deezer.com/search/album?q=${encodeURIComponent(`${artist} ${title}`)}&limit=5`;
+    const searchRes = await fetch(searchUrl);
+    if (!searchRes.ok) return null;
+    const searchJson = await searchRes.json() as { data?: { id: number; title: string; artist: { name: string } }[] };
+    if (!searchJson.data?.length) return null;
+
+    const wantTitle = title.toLowerCase().replace(/[^a-z0-9]/g, "");
+    let bestId: number | null = null;
+    let bestScore = 0;
+    for (const a of searchJson.data) {
+      const gotTitle = (a.title ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const gotArtist = (a.artist?.name ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const wantArtist = artist.toLowerCase().replace(/[^a-z0-9]/g, "");
+      let score = 0;
+      if (gotTitle === wantTitle && gotArtist === wantArtist) score = 100;
+      else if (gotTitle.includes(wantTitle) && gotArtist.includes(wantArtist)) score = 70;
+      if (score > bestScore) { bestScore = score; bestId = a.id; }
+    }
+    if (!bestId || bestScore < 50) return null;
+
+    const albumUrl = `https://api.deezer.com/album/${bestId}`;
+    const albumRes = await fetch(albumUrl);
+    if (!albumRes.ok) return null;
+    const albumJson = await albumRes.json() as {
+      tracks?: { data?: { track_position: number; title: string; duration: number; preview?: string }[] };
+    };
+    const rawTracks = albumJson.tracks?.data;
+    if (!rawTracks?.length) return null;
+
+    return rawTracks.map((t) => {
+      const { name, featuring } = parseFeaturing(t.title, artist);
+      return {
+        number: t.track_position,
+        name,
+        artist,
+        durationMs: t.duration * 1000,
+        featuring,
+        previewUrl: t.preview ?? null,
+      } as Track;
+    });
+  } catch {
+    return null;
+  }
 }

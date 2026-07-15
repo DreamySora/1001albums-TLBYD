@@ -30,7 +30,7 @@ export function Hero({ total, genreCount, artistCount }: { total: number; genreC
         transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      <div className="relative mx-auto max-w-[1800px] px-4 pt-12 pb-8 sm:px-6 sm:pt-16">
+      <div className="relative mx-auto max-w-[1800px] px-3 pt-8 pb-4 sm:px-6 sm:pt-16">
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -38,7 +38,10 @@ export function Hero({ total, genreCount, artistCount }: { total: number; genreC
           className="mt-3 font-display text-[16vw] leading-[0.82] tracking-tight uppercase sm:text-[12vw] lg:text-[150px]"
         >
           <span className="block">
-            <span className="text-gradient-funk">1001</span> Albums<span className="text-hotpink">.</span>
+            <span className="text-gradient-funk">1001</span>
+          </span>
+          <span className="block">
+            Albums<span className="text-hotpink">.</span>
           </span>
           <span className="block">
             Before
@@ -52,7 +55,7 @@ export function Hero({ total, genreCount, artistCount }: { total: number; genreC
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.4 }}
-          className="mt-5 max-w-2xl font-grotesk text-base text-muted-foreground sm:text-lg"
+          className="mt-3 sm:mt-5 max-w-2xl font-grotesk text-sm sm:text-lg text-muted-foreground"
         >
           A funky, opinionated guide to the records that matter. Dive in by genre, artist, letter or
           length — every cover, every note, a reason to press play.
@@ -72,7 +75,7 @@ export function Hero({ total, genreCount, artistCount }: { total: number; genreC
       </div>
 
       {/* marquee band */}
-      <div className="relative border-t border-white/10 bg-black/30 py-2 font-mono-funk text-xs tracking-[0.2em] text-foreground/70">
+      <div className="relative border-t border-white/10 bg-black/30 py-2 font-mono-funk text-[11px] sm:text-xs tracking-[0.2em] text-foreground/70">
         <Marquee
           items={[
             "INDIE ROCK", "DREAM POP", "HIP HOP", "NEO-SOUL", "AFROBEAT", "KRAUTROCK",

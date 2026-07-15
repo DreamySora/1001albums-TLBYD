@@ -43,7 +43,7 @@ export default function AccountPage() {
         </p>
 
         {/* Stats */}
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mt-6 grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-4">
           <StatCard label="Listened" value={listened.length} icon={<CheckCircle2 className="size-4 text-lime" />} />
           <StatCard label="Want to hear" value={want.length} icon={<Heart className="size-4 text-hotpink" />} />
           <StatCard label="Owned" value={owned.length} icon={<Disc3 className="size-4 text-amber" />} />
@@ -318,11 +318,13 @@ function PrivacySection() {
       </div>
 
       <div className="rounded-xl border border-white/10 bg-card p-5">
-        <h3 className="font-display text-lg uppercase tracking-tight">APIs &amp; Data Sources</h3>
+        <h3 className="font-display text-lg uppercase tracking-tight">APIs, Hosting &amp; Data Sources</h3>
         <ul className="mt-3 space-y-2 font-grotesk text-sm text-foreground/80">
+          <li>• <strong className="text-foreground">Vercel Inc.</strong> (vercel.com) — hosting and serverless functions for the web application. Vercel may collect standard server logs (IP address, request timestamps, user agent) as part of their infrastructure operations.</li>
           <li>• <strong className="text-foreground">iTunes Search API</strong> (itunes.apple.com) — album artwork, tracklists, 30-second previews. No API key required; subject to Apple's terms.</li>
-          <li>• <strong className="text-foreground">MusicBrainz API</strong> (musicbrainz.org) — album metadata, used as fallback for artwork. Licensed under CC BY-SA.</li>
+          <li>• <strong className="text-foreground">MusicBrainz API</strong> (musicbrainz.org) — album metadata. Licensed under CC BY-SA.</li>
           <li>• <strong className="text-foreground">Cover Art Archive</strong> (coverartarchive.org) — album cover images. Licensed under CC0.</li>
+          <li>• <strong className="text-foreground">Deezer API</strong> (api.deezer.com) — fallback tracklist and 30-second audio previews. Free public API, no authentication required; subject to Deezer's terms.</li>
         </ul>
       </div>
     </div>

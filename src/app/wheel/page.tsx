@@ -70,7 +70,7 @@ export default function WheelPage() {
         </p>
 
         {/* Genre filter (compact) */}
-        <div className="mt-6 flex max-w-3xl flex-wrap justify-center gap-1.5">
+        <div className="mt-6 flex max-w-3xl gap-1.5 overflow-x-auto pb-2 scrollbar-funky sm:flex-wrap sm:justify-center">
           {genres.slice(0, 40).map((g) => {
             const active = selected.includes(g.name);
             return (

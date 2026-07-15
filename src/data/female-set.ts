@@ -29,6 +29,8 @@ export const FEMALE_ARTISTS = new Set<string>([
   "Rina Sawayama","Yaeji","Janelle Monáe","Princess Nokia","Le1f","Cakes da Killa","Mykki Blanco",
   "Aimee Mann","Marissa Nadler","Meg Baird","Lizz Wright","Lucinda Williams","Emmylou Harris",
   "Gillian Welch","Rosanne Cash","Nilüfer Yanya","Julia Jacklin","Adrianne Lenker","Tinashe",
+  "Little Simz","Jessie Ware","NAO","Raveena","Kali Uchis","Teyana Taylor","Celeste","Erika de Casier",
+  "Arlo Parks","Kacey Musgraves","Tove Lo","Yebba","Caroline Polachek",
   // --- Female-fronted bands (female lead vocalist) ---
   "Cocteau Twins","Beach House","Yeah Yeah Yeahs","The Knife","Fever Ray","Mazzy Star","Lush",
   "Sleater-Kinney","Bikini Kill","Hole","Veruca Salt","The Breeders","Cat Power","Eurythmics",
@@ -39,4 +41,5 @@ export const FEMALE_ARTISTS = new Set<string>([
   "Wednesday","Big Thief","My Bloody Valentine","Arcade Fire","Girls Aloud","Sugababes","All Saints",
   "Mis-Teeq","Sweet Female Attitude","Ms. Dynamite","Estelle","V V Brown","Noisettes","TLC",
   "Destiny's Child","Sault","Cleo Sol","Chairlift","Perfume","Capsule","Frost Children",
+  "Alvvays","Haim","The Marías","Men I Trust","Cariño",
 ]);
