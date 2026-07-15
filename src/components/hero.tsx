@@ -38,7 +38,7 @@ export function Hero({ total, genreCount, artistCount }: { total: number; genreC
           className="flex items-center gap-2 font-mono-funk text-[11px] tracking-[0.25em] text-lime"
         >
           <Disc3 className="size-4 animate-[spin_4s_linear_infinite]" />
-          A HAND-PICKED CRATE OF ESSENTIAL RECORDS
+          A HAND-PICKED CRATE
         </motion.div>
 
         <motion.h1

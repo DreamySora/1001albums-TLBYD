@@ -16,12 +16,12 @@ export function TopNav({ active }: { active: "home" | "random" | "wheel" | "acco
       <div className="mx-auto flex h-full max-w-[1800px] items-center justify-between px-3 sm:px-5">
         <Link href="/" className="flex items-center gap-3 font-display text-lg uppercase tracking-tight text-foreground" aria-label="Home">
           <Disc3 className="size-6 text-hotpink animate-[spin_8s_linear_infinite]" />
-          <div className="hidden sm:flex flex-col items-center justify-center leading-none">
+          <div className="hidden sm:flex items-center gap-2">
             <span className="font-display text-xl tracking-tight">
               1001<span className="text-lime">.</span>
             </span>
-            <span className="font-grotesk text-[9px] tracking-widest text-lime/80 uppercase mt-0.5">
-              Albums to listen before you die
+            <span className="font-grotesk text-xs tracking-wider text-lime/80 uppercase">
+              AlbumsTLBYD
             </span>
           </div>
         </Link>
