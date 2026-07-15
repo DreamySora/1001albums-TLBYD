@@ -38,10 +38,13 @@ export function Hero({ total, genreCount, artistCount }: { total: number; genreC
           className="mt-3 font-display text-[16vw] leading-[0.82] tracking-tight uppercase sm:text-[12vw] lg:text-[150px]"
         >
           <span className="block">
-            <span className="text-gradient-funk">1001</span>Albums<span className="text-hotpink">.</span>
+            <span className="text-gradient-funk">1001</span> Albums<span className="text-hotpink">.</span>
           </span>
-          <span className="block text-foreground">
-            BeforeYou <span className="text-amber">Die</span><span className="text-lime">.</span>
+          <span className="block">
+            Before
+          </span>
+          <span className="block">
+            You <span className="text-gradient-funk">Die</span><span className="text-lime">.</span>
           </span>
         </motion.h1>
 

@@ -15,12 +15,12 @@ export function TopNav({ active }: { active: "home" | "random" | "wheel" | "acco
     <nav className="fixed top-0 left-0 right-0 z-50 h-14 bg-background/90 backdrop-blur-xl border-b border-white/10">
       <div className="mx-auto flex h-full max-w-[1800px] items-center justify-between px-3 sm:px-5">
         <Link href="/" className="flex items-center gap-3 font-display text-lg uppercase tracking-tight text-foreground" aria-label="Home">
-          <Disc3 className="size-5 text-hotpink animate-[spin_8s_linear_infinite]" />
+          <Disc3 className="size-4 text-hotpink animate-[spin_8s_linear_infinite]" />
           <div className="hidden sm:flex items-center gap-2">
-            <span className="font-display text-xl tracking-tight">
-              1001<span className="text-lime">.</span>
+            <span className="font-display text-xl tracking-tight text-gradient-funk">
+              1001<span className="text-hotpink">.</span>
             </span>
-            <span className="font-grotesk text-sm tracking-wider text-lime uppercase">
+            <span className="font-grotesk text-sm tracking-wider text-gradient-funk uppercase">
               AlbumsTLBYD
             </span>
           </div>
@@ -28,21 +28,21 @@ export function TopNav({ active }: { active: "home" | "random" | "wheel" | "acco
 
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-3">
-          <NavLink href="/" label="Browse" active={active === "home"} className="size-10"><Compass className="size-5" /></NavLink>
-          <NavLink href="/random" label="Random" active={active === "random"} className="size-10"><Dice6 className="size-5" /></NavLink>
-          <NavLink href="/wheel" label="Wheel" active={active === "wheel"} className="size-10"><Music className="size-5" /></NavLink>
-          <NavLink href="/account" label="Account" active={active === "account"} className="size-10"><User className="size-5" /></NavLink>
+          <NavLink href="/" label="Browse" active={active === "home"} className="size-9"><Compass className="size-4" /></NavLink>
+          <NavLink href="/random" label="Random" active={active === "random"} className="size-9"><Dice6 className="size-4" /></NavLink>
+          <NavLink href="/wheel" label="Wheel" active={active === "wheel"} className="size-9"><Music className="size-4" /></NavLink>
+          <NavLink href="/account" label="Account" active={active === "account"} className="size-9"><User className="size-4" /></NavLink>
           <ThemeToggle />
         </div>
 
         {/* Mobile menu button */}
         <button
-          className="md:hidden flex size-10 items-center justify-center rounded-full border border-white/15 bg-card/60 text-foreground transition hover:border-hotpink"
+          className="md:hidden flex size-9 items-center justify-center rounded-full border border-white/15 bg-card/60 text-foreground transition hover:border-hotpink"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
           aria-expanded={mobileOpen}
         >
-          {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+          {mobileOpen ? <X className="size-4" /> : <Menu className="size-4" />}
         </button>
       </div>
 
@@ -56,10 +56,10 @@ export function TopNav({ active }: { active: "home" | "random" | "wheel" | "acco
             className="md:hidden border-t border-white/10 bg-background/95 backdrop-blur-xl py-3 px-3"
           >
             <div className="flex flex-col gap-2">
-              <NavLink href="/" label="Browse" active={active === "home"} className="justify-start px-4 py-3 text-base"><Compass className="size-5 mr-4" /> Browse</NavLink>
-              <NavLink href="/random" label="Random" active={active === "random"} className="justify-start px-4 py-3 text-base"><Dice6 className="size-5 mr-4" /> Random</NavLink>
-              <NavLink href="/wheel" label="Wheel" active={active === "wheel"} className="justify-start px-4 py-3 text-base"><Music className="size-5 mr-4" /> Wheel</NavLink>
-              <NavLink href="/account" label="Account" active={active === "account"} className="justify-start px-4 py-3 text-base"><User className="size-5 mr-4" /> Account</NavLink>
+              <NavLink href="/" label="Browse" active={active === "home"} className="justify-start px-4 py-3 text-base"><Compass className="size-4 mr-4" /> Browse</NavLink>
+              <NavLink href="/random" label="Random" active={active === "random"} className="justify-start px-4 py-3 text-base"><Dice6 className="size-4 mr-4" /> Random</NavLink>
+              <NavLink href="/wheel" label="Wheel" active={active === "wheel"} className="justify-start px-4 py-3 text-base"><Music className="size-4 mr-4" /> Wheel</NavLink>
+              <NavLink href="/account" label="Account" active={active === "account"} className="justify-start px-4 py-3 text-base"><User className="size-4 mr-4" /> Account</NavLink>
             </div>
             <ThemeToggle className="mt-2 mb-1" />
           </motion.div>
@@ -76,14 +76,14 @@ function ThemeToggle({ className = "" }: { className?: string }) {
       <TooltipTrigger asChild>
         <button
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className={`flex size-10 items-center justify-center rounded-full border border-white/15 bg-card/60 text-foreground transition hover:border-hotpink hover:text-hotpink ${className}`}
+          className={`flex size-9 items-center justify-center rounded-full border border-white/15 bg-card/60 text-foreground transition hover:border-hotpink hover:text-hotpink ${className}`}
           aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
         >
           <AnimatePresence mode="wait">
             {theme === "dark" ? (
-              <motion.span key="moon" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }}><Moon className="size-5" /></motion.span>
+              <motion.span key="moon" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }}><Moon className="size-4" /></motion.span>
             ) : (
-              <motion.span key="sun" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }}><Sun className="size-5" /></motion.span>
+              <motion.span key="sun" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }}><Sun className="size-4" /></motion.span>
             )}
           </AnimatePresence>
         </button>
