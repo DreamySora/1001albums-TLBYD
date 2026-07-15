@@ -4,7 +4,7 @@ import { matchScore, MATCH_THRESHOLD } from "../src/lib/itunes-match";
 
 // Discogs cover-fetch script — recovers covers missing from iTunes + MusicBrainz.
 // Discogs API: https://www.discogs.com/developers (no token needed, rate-limited).
-const cachePath = "/home/z/my-project/src/data/covers-keyed.json";
+const cachePath = "src/data/covers-keyed.json";
 type CacheEntry = { url: string | null; status: string; cid?: number };
 type Cache = Record<string, CacheEntry>;
 let cache: Cache = {};

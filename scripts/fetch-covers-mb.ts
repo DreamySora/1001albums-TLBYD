@@ -2,7 +2,7 @@ import { ALBUMS } from "../src/data/albums";
 import { writeFileSync, readFileSync, existsSync } from "fs";
 
 // Fetch missing covers from MusicBrainz + Cover Art Archive (iTunes is 403-blocked).
-const cachePath = "/home/z/my-project/src/data/covers-keyed.json";
+const cachePath = "src/data/covers-keyed.json";
 type CacheEntry = { url: string | null; status: string; cid?: number };
 type Cache = Record<string, CacheEntry>;
 let cache: Cache = {};

@@ -14,6 +14,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "**.archive.org" },
       { protocol: "https", hostname: "**.discogs.com" },
       { protocol: "https", hostname: "coverartarchive.org" },
+      { protocol: "https", hostname: "i.discogs.com" },
     ],
   },
   // Tree-shake heavy libs (lucide-react, framer-motion) on import.

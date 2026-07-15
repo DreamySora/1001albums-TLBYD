@@ -2,7 +2,7 @@ import { ALBUMS } from "../src/data/albums";
 import { writeFileSync, readFileSync, existsSync } from "fs";
 import { matchScore, MATCH_THRESHOLD } from "../src/lib/itunes-match";
 
-const cachePath = "/home/z/my-project/src/data/covers-keyed.json";
+const cachePath = "src/data/covers-keyed.json";
 type CacheEntry = { url: string | null; status: string; cid?: number };
 type Cache = Record<string, CacheEntry>;
 let cache: Cache = {};
@@ -114,7 +114,7 @@ async function fetchCover(artist: string, title: string): Promise<{ url: string 
 
 const REVERIFY = process.env.REVERIFY === "1";
 // When re-verifying, track which keys we've already re-checked so we can resume.
-const reverifyDonePath = "/home/z/my-project/src/data/reverify-done.json";
+const reverifyDonePath = "src/data/reverify-done.json";
 let reverifyDone = new Set<string>();
 if (REVERIFY && existsSync(reverifyDonePath)) {
   try { reverifyDone = new Set(JSON.parse(readFileSync(reverifyDonePath, "utf-8"))); } catch {}
