@@ -14,11 +14,23 @@ function hashStr(s: string, n: number) {
   return h % n;
 }
 
+// Upgrade iTunes cover URL to higher resolution if available
+function upgradeCoverUrl(url: string): string {
+  // iTunes URLs end with /600x600bb.jpg - try to upgrade to larger sizes
+  return url.replace(/\/600x600bb\.(jpg|png)$/, "/1200x1200bb.jpg");
+}
+
+// Generate srcset with fallback - only include 1200w if URL pattern supports it
 function getSrcSet(url: string): string {
   if (!url) return "";
-  // Generate srcset with 600w and 1200w versions
-  const base = url.replace(/\/600x600bb\.jpg$/, "");
-  return `${base}/600x600bb.jpg 600w, ${base}/1200x1200bb.jpg 1200w`;
+  // Most iTunes URLs support 1200x1200, but some don't. 
+  // Use a conservative approach: only add 1200w if it's an iTunes URL
+  const isItunes = url.includes("mzstatic.com");
+  const base = url.replace(/\/600x600bb\.(jpg|png)$/, "");
+  if (isItunes) {
+    return `${base}/600x600bb.jpg 600w, ${base}/1200x1200bb.jpg 1200w`;
+  }
+  return `${url} 600w`;
 }
 
 export const AlbumCard = memo(function AlbumCard({ album, index, onGenre, onArtist, onOpen }: {
