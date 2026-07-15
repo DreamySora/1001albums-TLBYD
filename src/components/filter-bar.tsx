@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, SlidersHorizontal, Users, ChevronDown, ChevronUp, Grid } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Search, X, SlidersHorizontal, Users, ChevronDown, ChevronUp, Grid, Check, X as XIcon } from "lucide-react";
 import {
   DURATION_BUCKETS,
   SORT_OPTIONS,
@@ -26,6 +25,12 @@ function hashStr(s: string, n: number) {
   let h = 0;
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
   return h % n;
+}
+
+const DECADES = ["2020s", "2010s", "2000s", "1990s", "1980s", "1970s", "1960s", "1950s", "1940s"];
+
+function isDecade(genre: string): boolean {
+  return DECADES.includes(genre);
 }
 
 export function FilterBar({
@@ -57,8 +62,21 @@ export function FilterBar({
     setFilters({ search: "", genres: [], artist: null, letter: null, duration: "all", sort: filters.sort });
 
   const [showAllGenres, setShowAllGenres] = useState(false);
-  const visibleGenres = showAllGenres ? genres : genres.slice(0, 120);
+  const [showDecadePicker, setShowDecadePicker] = useState(false);
   const [artistSearch, setArtistSearch] = useState("");
+
+  const { decadeGenres, otherGenres } = useMemo(() => {
+    const decades: GenreInfo[] = [];
+    const others: GenreInfo[] = [];
+    for (const g of genres) {
+      if (isDecade(g.name)) decades.push(g);
+      else others.push(g);
+    }
+    decades.sort((a, b) => DECADES.indexOf(a.name) - DECADES.indexOf(b.name));
+    return { decadeGenres: decades, otherGenres: others };
+  }, [genres]);
+
+  const visibleOtherGenres = showAllGenres ? otherGenres : otherGenres.slice(0, 100);
 
   return (
     <div className="sticky top-14 z-40 border-y border-white/10 bg-background/85 backdrop-blur-xl sm:top-[57px]">
@@ -173,12 +191,137 @@ export function FilterBar({
         </div>
       </div>
 
-      {/* Row 2: genre chips (horizontal scroll with show all toggle on mobile) */}
+      {/* Row 2: Genre filter with Decades dropdown first */}
       <div className="border-t border-white/5">
         <div className="mx-auto flex max-w-[1800px] items-center gap-1.5 px-2 py-1.5 sm:gap-2 sm:px-3 sm:py-2">
           <SlidersHorizontal className="size-3 shrink-0 text-amber sm:size-3.5" />
+
+          {/* Decades Dropdown */}
+          <div className="relative">
+            <Popover open={showDecadePicker} onOpenChange={setShowDecadePicker}>
+              <PopoverTrigger asChild>
+                <button
+                  className={cn(
+                    "shrink-0 rounded-full border px-2.5 py-0.5 font-mono-funk text-[9px] tracking-wide transition-all flex items-center gap-1",
+                    filters.genres.some((g) => isDecade(g)) ? "border-transparent text-black bg-amber" : "border-white/15 text-foreground/75 hover:scale-105"
+                  )}
+                >
+                  <Grid className="size-3" />
+                  <span className="hidden sm:inline">DECADES</span>
+                  <ChevronDown className={cn("size-3 transition-transform", showDecadePicker && "rotate-180")} />
+                  {filters.genres.some((g) => isDecade(g)) && (
+                    <span className="ml-0.5 text-[8px] bg-black/20 rounded px-0.5">
+                      {filters.genres.filter((g) => isDecade(g)).length}
+                    </span>
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-48 p-2 border-white/15 bg-popover"
+                side="bottom"
+                align="start"
+                sideOffset={4}
+              >
+                <div className="flex items-center justify-between px-1 py-1 mb-1">
+                  <span className="font-mono-funk text-[10px] tracking-wider text-muted-foreground">Select Decade</span>
+                  <button
+                    onClick={() => {
+                      const decadeFilters = filters.genres.filter((g) => isDecade(g));
+                      setFilters({ ...filters, genres: filters.genres.filter((g) => !isDecade(g)) });
+                    }}
+                    className="text-[9px] text-muted-foreground hover:text-destructive font-mono-funk"
+                  >
+                    Clear All
+                  </button>
+                </div>
+                <div className="grid grid-cols-3 gap-1 max-h-[300px] overflow-y-auto scrollbar-funky">
+                  {DECADES.map((decade) => {
+                    const genreInfo = decadeGenres.find((g) => g.name === decade);
+                    const active = filters.genres.includes(decade);
+                    const color = ACCENTS[hashStr(decade, ACCENTS.length)];
+                    return (
+                      <button
+                        key={decade}
+                        onClick={() => toggleGenre(decade)}
+                        className={cn(
+                          "rounded border px-1.5 py-1 font-mono-funk text-[9px] tracking-wide transition-all text-center min-h-[44px] flex flex-col items-center justify-center",
+                          active ? "border-transparent text-black" : "border-white/10 text-foreground/80 hover:border-white/30"
+                        )}
+                        style={active ? { backgroundColor: color } : undefined}
+                      >
+                        <span className="font-medium">{decade}</span>
+                        {genreInfo && <span className="text-[7px] opacity-50 mt-0.5">{genreInfo.count}</span>}
+                        {active && <Check className="size-3 mt-0.5" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {/* Separator */}
+          <span className="shrink-0 text-white/20 font-mono-funk text-[9px] tracking-wider select-none">|</span>
+
+          {/* Other Genres - horizontal scroll with Show All popover */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                onClick={() => setShowAllGenres(!showAllGenres)}
+                className={cn(
+                  "shrink-0 rounded-full border px-2.5 py-0.5 font-mono-funk text-[9px] tracking-wide transition flex items-center gap-1",
+                  showAllGenres ? "border-hotpink text-hotpink" : "border-white/15 text-muted-foreground hover:border-hotpink hover:text-foreground"
+                )}
+              >
+                <ChevronDown className={cn("size-3 transition-transform", showAllGenres && "rotate-180")} />
+                <span className="hidden sm:inline">{showAllGenres ? "LESS" : "MORE"}</span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              className="w-[360px] max-h-[70vh] overflow-y-auto border-white/15 bg-popover p-2 scrollbar-funky"
+              side="bottom"
+              align="start"
+              sideOffset={4}
+            >
+              <div className="sticky top-0 bg-popover pb-2 mb-2 border-b border-white/10 flex items-center justify-between">
+                <span className="font-mono-funk text-[10px] tracking-wider text-muted-foreground">All Genres ({otherGenres.length})</span>
+                <button
+                  onClick={() => setShowAllGenres(false)}
+                  className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-mono-funk text-muted-foreground hover:text-foreground transition"
+                >
+                  <XIcon className="size-3" /> Close
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-4">
+                {otherGenres.map((g) => {
+                  const active = filters.genres.includes(g.name);
+                  const color = ACCENTS[hashStr(g.name, ACCENTS.length)];
+                  return (
+                    <button
+                      key={g.name}
+                      onClick={() => {
+                        toggleGenre(g.name);
+                        setShowAllGenres(false);
+                      }}
+                      className={cn(
+                        "rounded border px-2 py-1.5 font-mono-funk text-[9px] tracking-wide transition-all text-left min-h-[44px] flex items-center gap-1.5",
+                        active ? "border-transparent text-black" : "border-white/10 text-foreground/80 hover:border-white/30"
+                      )}
+                      style={active ? { backgroundColor: color } : undefined}
+                    >
+                      <span className="truncate flex-1">{g.name}</span>
+                      <span className="shrink-0 text-[8px] opacity-50">{g.count}</span>
+                      {active && <Check className="size-3.5 shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {/* Visible genres chips (horizontal scroll) - limited to first ~20 for quick access */}
           <div className="flex flex-1 gap-1 overflow-x-auto pb-0.5 scrollbar-funky">
-            {visibleGenres.map((g) => {
+            {visibleOtherGenres.slice(0, 20).map((g) => {
               const active = filters.genres.includes(g.name);
               const color = ACCENTS[hashStr(g.name, ACCENTS.length)];
               return (
@@ -197,15 +340,6 @@ export function FilterBar({
               );
             })}
           </div>
-          {genres.length > 120 && (
-            <button
-              onClick={() => setShowAllGenres(!showAllGenres)}
-              className="shrink-0 rounded-full border border-white/15 px-2 py-0.5 font-mono-funk text-[9px] tracking-wide text-muted-foreground transition hover:border-hotpink hover:text-foreground sm:px-2.5 sm:py-1 sm:text-[10px]"
-            >
-              {showAllGenres ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
-              <span className="ml-1 hidden sm:inline">{showAllGenres ? "LESS" : "MORE"}</span>
-            </button>
-          )}
         </div>
       </div>
 
@@ -277,6 +411,8 @@ export function FilterBar({
     </div>
   );
 }
+
+import { AnimatePresence, motion } from "framer-motion";
 
 function FilterPill({ label, onClear, color }: { label: string; onClear: () => void; color: string }) {
   return (
