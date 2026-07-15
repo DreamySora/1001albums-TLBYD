@@ -31,29 +31,17 @@ export function Hero({ total, genreCount, artistCount }: { total: number; genreC
       />
 
       <div className="relative mx-auto max-w-[1800px] px-4 pt-12 pb-8 sm:px-6 sm:pt-16">
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="flex items-center gap-2 font-mono-funk text-[11px] tracking-[0.25em] text-lime"
-        >
-          <Disc3 className="size-4 animate-[spin_4s_linear_infinite]" />
-          A HAND-PICKED CRATE
-        </motion.div>
-
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
           className="mt-3 font-display text-[16vw] leading-[0.82] tracking-tight uppercase sm:text-[12vw] lg:text-[150px]"
         >
-          <span className="block text-gradient-funk">1001</span>
-          <span className="mt-1 block text-foreground">
-            Albums<span className="text-hotpink">.</span> Before
+          <span className="block">
+            <span className="text-gradient-funk">1001</span>Albums<span className="text-hotpink">.</span>
           </span>
           <span className="block text-foreground">
-            You <span className="text-amber">Die</span>
-            <span className="text-lime">.</span>
+            BeforeYou <span className="text-amber">Die</span><span className="text-lime">.</span>
           </span>
         </motion.h1>
 
