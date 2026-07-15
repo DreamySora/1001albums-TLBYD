@@ -49,23 +49,6 @@ export function AlbumModal({ album, onClose }: { album: Album | null; onClose: (
   const [playingUrl, setPlayingUrl] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const touchStartRef = useRef<number | null>(null);
-
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    touchStartRef.current = e.touches[0].clientY;
-  }, []);
-
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    const start = touchStartRef.current;
-    if (start === null) return;
-    const dy = e.changedTouches[0].clientY - start;
-    if (dy > 120) {
-      const el = scrollRef.current;
-      if (el && el.scrollTop <= 0) onClose();
-    }
-    touchStartRef.current = null;
-  }, [onClose]);
 
   const togglePlay = (url: string | null) => {
     if (!url) return;
@@ -181,21 +164,25 @@ export function AlbumModal({ album, onClose }: { album: Album | null; onClose: (
           onClick={onClose}
         >
           <motion.div
-            ref={scrollRef}
             initial={{ y: 60, opacity: 0, scale: 0.98 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 40, opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             onClick={(e) => e.stopPropagation()}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-            className="relative max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-t-2xl border border-white/10 bg-card shadow-2xl sm:rounded-2xl scrollbar-funky"
+            className="relative flex max-h-[92vh] w-full max-w-3xl flex-col rounded-t-2xl border border-white/10 bg-card shadow-2xl sm:rounded-2xl scrollbar-funky"
             style={{ boxShadow: `0 -10px 80px -20px ${accent}` }}
           >
-            {/* Header: cover + meta */}
-            <div className="flex flex-col gap-3 border-b border-white/10 p-3 sm:flex-row sm:gap-4 sm:p-6">
-              <div
-                className="relative aspect-square w-36 shrink-0 overflow-hidden rounded-xl ring-1 ring-white/10 sm:w-48"
+            {/* Drag handle bar — visual only */}
+            <div className="flex shrink-0 justify-center pt-2 pb-0">
+              <div className="h-1.5 w-10 rounded-full bg-white/30" />
+            </div>
+
+            {/* Scrollable content */}
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              {/* Header: cover + meta */}
+              <div className="flex flex-col gap-3 border-b border-white/10 p-3 sm:flex-row sm:gap-4 sm:p-6">
+                <div
+                  className="relative aspect-square w-36 shrink-0 overflow-hidden rounded-xl ring-1 ring-white/10 sm:w-44"
                 style={{ boxShadow: `0 8px 30px -10px ${accent}` }}
               >
 {album.cover ? (
@@ -296,7 +283,7 @@ export function AlbumModal({ album, onClose }: { album: Album | null; onClose: (
                         className="group flex items-center gap-2 rounded-lg px-1 py-1.5 transition-colors hover:bg-white/5 sm:gap-3 sm:px-2 sm:py-2"
                       >
                         <span className="w-5 shrink-0 text-center font-mono-funk text-[10px] text-muted-foreground sm:w-6 sm:text-[11px]">
-                          {t.number.toString().padStart(2, "0")}
+                          {t.number?.toString().padStart(2, "0") ?? "--"}
                         </span>
                         <div className="min-w-0 flex-1">
                           <p className={cn("truncate font-grotesk text-xs sm:text-sm", isPlaying ? "text-lime" : "text-foreground")}>
@@ -367,8 +354,9 @@ export function AlbumModal({ album, onClose }: { album: Album | null; onClose: (
                 </span>
               </div>
             </div>
-          </motion.div>
+          </div>
         </motion.div>
+      </motion.div>
       )}
     </AnimatePresence>
   );

@@ -392,10 +392,10 @@ async function dzFetchTracklist(artist: string, title: string): Promise<Track[] 
     const rawTracks = albumJson.tracks?.data;
     if (!rawTracks?.length) return null;
 
-    return rawTracks.map((t) => {
+    return rawTracks.map((t, i) => {
       const { name, featuring } = parseFeaturing(t.title, artist);
       return {
-        number: t.track_position,
+        number: t.track_position ?? i + 1,
         name,
         artist,
         durationMs: t.duration * 1000,
