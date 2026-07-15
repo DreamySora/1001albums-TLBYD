@@ -15,21 +15,21 @@ export function TopNav({ active }: { active: "home" | "random" | "wheel" | "acco
     <nav className="fixed top-0 left-0 right-0 z-50 h-14 bg-background/90 backdrop-blur-xl border-b border-white/10">
       <div className="mx-auto flex h-full max-w-[1800px] items-center justify-between px-3 sm:px-5">
         <Link href="/" className="flex items-center gap-2 font-display text-lg uppercase tracking-tight text-foreground" aria-label="Home">
-          <Disc3 className="size-5 text-hotpink animate-[spin_8s_linear_infinite]" />
+          <Disc3 className="size-6 text-hotpink animate-[spin_8s_linear_infinite]" />
           <span className="hidden sm:inline-block font-display text-xl tracking-tight">
-            1001<span className="text-lime">.</span> ALBUMS TO LISTEN BEFORE YOU DIE
+            1001<span className="text-lime">.</span>
           </span>
-          <span className="hidden sm:inline-block font-mono-funk text-[10px] tracking-widest text-lime/60 uppercase">
-            HAND-PICKED CRATE
+          <span className="hidden sm:inline-block font-grotesk text-[10px] tracking-widest text-lime/60 uppercase ml-3 leading-none">
+            ALBUMS TO LISTEN BEFORE YOU DIE
           </span>
         </Link>
 
         {/* Desktop nav */}
-        <div className="hidden md:flex items-center gap-1">
-          <NavLink href="/" label="Browse" active={active === "home"}><Compass className="size-4" /></NavLink>
-          <NavLink href="/random" label="Random" active={active === "random"}><Dice6 className="size-4" /></NavLink>
-          <NavLink href="/wheel" label="Wheel" active={active === "wheel"}><Music className="size-4" /></NavLink>
-          <NavLink href="/account" label="Account" active={active === "account"}><User className="size-4" /></NavLink>
+        <div className="hidden md:flex items-center gap-4 ml-4">
+          <NavLink href="/" label="Browse" active={active === "home"} className="size-11"><Compass className="size-6" /></NavLink>
+          <NavLink href="/random" label="Random" active={active === "random"} className="size-11"><Dice6 className="size-6" /></NavLink>
+          <NavLink href="/wheel" label="Wheel" active={active === "wheel"} className="size-11"><Music className="size-6" /></NavLink>
+          <NavLink href="/account" label="Account" active={active === "account"} className="size-11"><User className="size-6" /></NavLink>
           <ThemeToggle />
         </div>
 
@@ -54,10 +54,10 @@ export function TopNav({ active }: { active: "home" | "random" | "wheel" | "acco
             className="md:hidden border-t border-white/10 bg-background/95 backdrop-blur-xl py-3 px-3"
           >
             <div className="flex flex-col gap-2">
-              <NavLink href="/" label="Browse" active={active === "home"} className="justify-start px-3 py-2 text-base"><Compass className="size-5 mr-3" /> Browse</NavLink>
-              <NavLink href="/random" label="Random" active={active === "random"} className="justify-start px-3 py-2 text-base"><Dice6 className="size-5 mr-3" /> Random</NavLink>
-              <NavLink href="/wheel" label="Wheel" active={active === "wheel"} className="justify-start px-3 py-2 text-base"><Music className="size-5 mr-3" /> Wheel</NavLink>
-              <NavLink href="/account" label="Account" active={active === "account"} className="justify-start px-3 py-2 text-base"><User className="size-5 mr-3" /> Account</NavLink>
+              <NavLink href="/" label="Browse" active={active === "home"} className="justify-start px-3 py-2 text-base"><Compass className="size-6 mr-3" /> Browse</NavLink>
+              <NavLink href="/random" label="Random" active={active === "random"} className="justify-start px-3 py-2 text-base"><Dice6 className="size-6 mr-3" /> Random</NavLink>
+              <NavLink href="/wheel" label="Wheel" active={active === "wheel"} className="justify-start px-3 py-2 text-base"><Music className="size-6 mr-3" /> Wheel</NavLink>
+              <NavLink href="/account" label="Account" active={active === "account"} className="justify-start px-3 py-2 text-base"><User className="size-6 mr-3" /> Account</NavLink>
             </div>
             <ThemeToggle className="mt-2 mb-1" />
           </motion.div>
