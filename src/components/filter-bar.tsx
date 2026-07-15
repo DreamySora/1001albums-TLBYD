@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, SlidersHorizontal, Users } from "lucide-react";
+import { Search, X, SlidersHorizontal, Users, ChevronDown, ChevronUp, Grid } from "lucide-react";
 import {
   DURATION_BUCKETS,
   SORT_OPTIONS,
@@ -18,6 +19,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const ACCENTS = ["var(--hotpink)", "var(--lime)", "var(--amber)", "var(--grape)", "var(--cyan)"];
 function hashStr(s: string, n: number) {
@@ -54,6 +56,10 @@ export function FilterBar({
   const clearAll = () =>
     setFilters({ search: "", genres: [], artist: null, letter: null, duration: "all", sort: filters.sort });
 
+  const [showAllGenres, setShowAllGenres] = useState(false);
+  const visibleGenres = showAllGenres ? genres : genres.slice(0, 120);
+  const [artistSearch, setArtistSearch] = useState("");
+
   return (
     <div className="sticky top-[57px] z-40 border-y border-white/10 bg-background/85 backdrop-blur-xl">
       {/* Row 1: search + sort + artist + count */}
@@ -82,22 +88,57 @@ export function FilterBar({
           ))}
         </select>
 
-        {/* artist picker */}
+        {/* artist picker - Popover on desktop, Sheet on mobile */}
         <Popover>
           <PopoverTrigger asChild>
-            <button className="flex h-9 items-center gap-1.5 rounded-md border border-white/15 bg-card/60 px-3 font-mono-funk text-[11px] tracking-wide text-foreground transition hover:border-lime">
-              <Users className="size-3.5" /> ARTISTS
-            </button>
+            <Sheet>
+              <SheetTrigger asChild>
+                <button className="flex h-9 items-center gap-1.5 rounded-md border border-white/15 bg-card/60 px-3 font-mono-funk text-[11px] tracking-wide text-foreground transition hover:border-lime">
+                  <Users className="size-3.5" /> ARTISTS
+                </button>
+              </SheetTrigger>
+              <SheetContent className="w-full max-w-sm p-0 sm:hidden">
+                <div className="sticky top-0 bg-popover p-2 pb-1.5">
+                  <Input
+                    placeholder="Filter artists…"
+                    value={artistSearch}
+                    onChange={(e) => setArtistSearch(e.target.value.toLowerCase())}
+                    className="h-8 border-white/15 bg-card/60 font-grotesk text-xs"
+                    id="artist-filter-mobile"
+                  />
+                </div>
+                <div className="max-h-[60vh] overflow-y-auto p-1 scrollbar-funky">
+                  {artists
+                    .filter((a) => a.name.toLowerCase().includes(artistSearch))
+                    .map((a) => (
+                      <button
+                        key={a.name}
+                        onClick={() => {
+                          setFilters({ ...filters, artist: filters.artist === a.name ? null : a.name });
+                        }}
+                        className={cn(
+                          "flex w-full items-center justify-between rounded px-2 py-1.5 text-left font-grotesk text-sm transition",
+                          filters.artist === a.name ? "bg-hotpink text-black" : "hover:bg-white/5"
+                        )}
+                      >
+                        <span className="truncate">{a.name}</span>
+                        <span className="ml-2 shrink-0 font-mono-funk text-[10px] opacity-60">{a.count}</span>
+                      </button>
+                    ))}
+                </div>
+              </SheetContent>
+            </Sheet>
           </PopoverTrigger>
           <PopoverContent
             className="max-h-[60vh] w-[320px] overflow-y-auto border-white/15 bg-popover p-0 scrollbar-funky"
             align="end"
+            sideOffset={8}
           >
             <div className="sticky top-0 bg-popover p-2 pb-1.5">
               <Input
                 placeholder="Filter artists…"
                 className="h-8 border-white/15 bg-card/60 font-grotesk text-xs"
-                id="artist-filter"
+                id="artist-filter-desktop"
                 onChange={(e) => {
                   const v = e.target.value.toLowerCase();
                   const items = document.querySelectorAll<HTMLElement>("[data-artist-name]");
@@ -133,12 +174,12 @@ export function FilterBar({
         </div>
       </div>
 
-      {/* Row 2: genre chips (horizontal scroll) */}
+      {/* Row 2: genre chips (horizontal scroll with show all toggle on mobile) */}
       <div className="border-t border-white/5">
         <div className="mx-auto flex max-w-[1800px] items-center gap-2 px-3 py-2 sm:px-5">
           <SlidersHorizontal className="size-3.5 shrink-0 text-amber" />
           <div className="flex flex-1 gap-1.5 overflow-x-auto pb-1 scrollbar-funky">
-            {genres.slice(0, 120).map((g) => {
+            {visibleGenres.map((g) => {
               const active = filters.genres.includes(g.name);
               const color = ACCENTS[hashStr(g.name, ACCENTS.length)];
               return (
@@ -157,14 +198,23 @@ export function FilterBar({
               );
             })}
           </div>
+          {genres.length > 120 && (
+            <button
+              onClick={() => setShowAllGenres(!showAllGenres)}
+              className="shrink-0 rounded-full border border-white/15 px-2.5 py-1 font-mono-funk text-[10px] tracking-wide text-muted-foreground transition hover:border-hotpink hover:text-foreground"
+            >
+              {showAllGenres ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+              <span className="ml-1 hidden sm:inline">{showAllGenres ? "LESS" : "MORE"}</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* Row 3: letters + duration + active filters */}
       <div className="border-t border-white/5">
         <div className="mx-auto flex max-w-[1800px] flex-wrap items-center gap-x-4 gap-y-2 px-3 py-2 sm:px-5">
-          {/* letters */}
-          <div className="flex items-center gap-0.5">
+          {/* letters - responsive grid on mobile */}
+          <div className="flex flex-wrap items-center gap-0.5 sm:gap-0.5">
             {LETTERS.map((L) => (
               <button
                 key={L}

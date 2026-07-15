@@ -154,9 +154,16 @@ export function AlbumModal({ album, onClose }: { album: Album | null; onClose: (
                 className="relative aspect-square w-full shrink-0 overflow-hidden rounded-xl ring-1 ring-white/10 sm:w-36"
                 style={{ boxShadow: `0 8px 30px -10px ${accent}` }}
               >
-                {album.cover ? (
-                  <img src={album.cover} alt={`${album.title} cover`} className="h-full w-full object-cover" />
-                ) : (
+{album.cover ? (
+                    <img
+                      src={album.cover}
+                      alt={`${album.title} cover`}
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
+                    />
+                  ) : (
                   <div
                     className="flex h-full w-full items-center justify-center p-2 text-center"
                     style={{ background: `linear-gradient(140deg, ${accent}, oklch(0.16 0.01 60))` }}

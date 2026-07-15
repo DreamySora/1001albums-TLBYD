@@ -98,8 +98,12 @@ export default function WheelPage() {
             ref={wheelRef}
             animate={{ rotate: rotation }}
             transition={{ duration: 4, ease: [0.16, 1, 0.3, 1] }}
-            className="relative size-[320px] rounded-full border-4 border-white/10 shadow-2xl sm:size-[440px]"
-            style={{ boxShadow: "0 0 80px -10px var(--hotpink)" }}
+            className="relative rounded-full border-4 border-white/10 shadow-2xl"
+            style={{
+              width: "min(90vw, 440px)",
+              height: "min(90vw, 440px)",
+              boxShadow: "0 0 80px -10px var(--hotpink)",
+            }}
           >
             {pool.length === 0 ? (
               <div className="flex h-full w-full items-center justify-center font-mono-funk text-xs text-muted-foreground">
@@ -120,7 +124,13 @@ export default function WheelPage() {
                   const ly = 50 + labelRadius * Math.sin((midAngle * Math.PI) / 180);
                   return (
                     <g key={a.id}>
-                      <path d={path} fill={color} fillOpacity={0.85} stroke="rgba(0,0,0,0.3)" strokeWidth={pool.length > 200 ? 0.05 : 0.2} />
+                      <path
+                        d={path}
+                        fill={color}
+                        fillOpacity={0.85}
+                        stroke="rgba(0,0,0,0.3)"
+                        strokeWidth={pool.length > 200 ? 0.05 : 0.2}
+                      />
                       {showLabel && (
                         <text
                           x={lx}
@@ -167,10 +177,17 @@ export default function WheelPage() {
                 onClick={() => setOpenAlbum(result)}
                 className="mt-3 flex flex-col items-center"
               >
-                <div className="size-40 overflow-hidden rounded-xl ring-1 ring-white/10">
-                  {result.cover ? (
-                    <img src={result.cover} alt={result.title} className="h-full w-full object-cover" />
-                  ) : (
+                <div className="size-[min(80vw,160px)] overflow-hidden rounded-xl ring-1 ring-white/10">
+{result.cover ? (
+                      <img
+                        src={result.cover}
+                        alt={result.title}
+                        className="h-full w-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                      />
+                    ) : (
                     <div className="flex h-full w-full items-center justify-center bg-card p-2 text-center">
                       <span className="font-display text-sm uppercase">{result.title}</span>
                     </div>

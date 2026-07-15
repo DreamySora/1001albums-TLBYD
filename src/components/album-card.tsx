@@ -14,6 +14,14 @@ function hashStr(s: string, n: number) {
   return h % n;
 }
 
+function getSrcSet(url: string): string {
+  if (!url) return "";
+  // Only generate srcset for iTunes URLs (mzstatic.com) which support /600x600bb.jpg and /1200x1200bb.jpg
+  if (!url.includes("mzstatic.com") || !url.includes("/600x600bb.jpg")) return "";
+  const base = url.replace(/\/600x600bb\.jpg$/, "");
+  return `${base}/600x600bb.jpg 600w, ${base}/1200x1200bb.jpg 1200w`;
+}
+
 export const AlbumCard = memo(function AlbumCard({ album, index, onGenre, onArtist, onOpen }: {
   album: Album;
   index: number;
@@ -23,6 +31,8 @@ export const AlbumCard = memo(function AlbumCard({ album, index, onGenre, onArti
 }) {
   const fallbackAccent = ACCENTS[hashStr(album.artist, ACCENTS.length)];
   const [glowColor, setGlowColor] = useState<string | null>(null);
+  const [imgError, setImgError] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -53,16 +63,37 @@ export const AlbumCard = memo(function AlbumCard({ album, index, onGenre, onArti
         className="relative block aspect-square w-full overflow-hidden rounded-xl bg-card text-left ring-1 ring-white/10 transition-transform duration-300 hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-hotpink"
         style={{ boxShadow: `0 14px 60px -12px ${accent}, 0 0 24px -8px ${accent}` }}
         aria-label={`Open ${album.title} by ${album.artist}`}
+        data-album-card
       >
-        {album.cover ? (
-          <img
-            src={album.cover}
-            alt={`${album.title} — ${album.artist} cover`}
-            loading="lazy"
-            decoding="async"
-            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-          />
-        ) : (
+{album.cover && !imgError ? (
+            <>
+              {/* Blur placeholder while loading */}
+              {!imgLoaded && (
+                <div
+                  className="absolute inset-0 bg-cover bg-center blur-[30px] scale-110 opacity-60 transition-opacity duration-500"
+                  style={{ backgroundImage: `url(${album.cover})` }}
+                  aria-hidden="true"
+                />
+              )}
+              <img
+                src={album.cover}
+                srcSet={getSrcSet(album.cover) || undefined}
+                sizes={getSrcSet(album.cover) ? "(max-width: 640px) 320px, (max-width: 1024px) 280px, 240px" : undefined}
+                alt={`${album.title} — ${album.artist} cover`}
+                loading="lazy"
+                decoding="async"
+                className={cn(
+                  "h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110",
+                  imgLoaded ? "opacity-100" : "opacity-0"
+                )}
+                onLoad={() => setImgLoaded(true)}
+                onError={() => {
+                  setImgError(true);
+                  setImgLoaded(true);
+                }}
+              />
+            </>
+          ) : (
           <div
             className="flex h-full w-full items-center justify-center p-3 text-center"
             style={{ background: `linear-gradient(140deg, ${accent}, oklch(0.16 0.01 60))` }}

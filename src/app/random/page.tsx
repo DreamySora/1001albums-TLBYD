@@ -130,13 +130,20 @@ export default function RandomPage() {
               transition={{ duration: 0.3 }}
               className="mt-10 flex w-full max-w-md flex-col items-center"
             >
-              <button
+<button
                 onClick={() => setOpenAlbum(picked)}
-                className="relative aspect-square w-64 overflow-hidden rounded-xl ring-1 ring-white/10 transition hover:scale-105"
+                className="relative aspect-square w-full max-w-xs overflow-hidden rounded-xl ring-1 ring-white/10 transition hover:scale-105"
                 style={{ boxShadow: "0 20px 60px -20px var(--hotpink)" }}
               >
                 {picked.cover ? (
-                  <img src={picked.cover} alt={picked.title} className="h-full w-full object-cover" />
+                  <img
+                    src={picked.cover}
+                    alt={picked.title}
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
+                  />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center bg-card p-4 text-center">
                     <span className="font-display text-2xl uppercase">{picked.title}</span>
