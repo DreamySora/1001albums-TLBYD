@@ -11,6 +11,9 @@ import { AlbumModal } from "@/components/album-modal";
 import { TopNav } from "@/components/top-nav";
 import {
   applyFilters,
+  DURATION_BUCKETS,
+  LETTERS,
+  SORT_OPTIONS,
   type Album,
   type Filters,
   type GenreInfo,
@@ -32,13 +35,20 @@ function filtersToParams(f: Filters): URLSearchParams {
 }
 
 function paramsToFilters(params: URLSearchParams): Filters {
+  const duration = params.get("duration");
+  const sort = params.get("sort");
+  const letter = params.get("letter")?.toUpperCase() ?? null;
   return {
     search: params.get("q") ?? "",
     genres: params.get("genres")?.split(",").filter(Boolean) ?? [],
     artist: params.get("artist") ?? null,
-    letter: params.get("letter") ?? null,
-    duration: (params.get("duration") as Filters["duration"]) ?? "all",
-    sort: (params.get("sort") as Filters["sort"]) ?? "default",
+    letter: letter && LETTERS.includes(letter) ? letter : null,
+    duration: DURATION_BUCKETS.some((bucket) => bucket.id === duration)
+      ? (duration as Filters["duration"])
+      : "all",
+    sort: SORT_OPTIONS.some((option) => option.id === sort)
+      ? (sort as Filters["sort"])
+      : "default",
   };
 }
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Disc3, Trash2, Heart, CheckCircle2, FileText, Save, X, Shield, Cookie } from "lucide-react";
-import { useAccount, Stars, type AlbumEntry, type OwnershipFormat } from "@/lib/account";
+import { useAccount, Stars, type AccountAlbum, type AlbumEntry, type OwnershipFormat } from "@/lib/account";
 import { TopNav } from "@/components/top-nav";
 
 const FORMAT_LABELS: Record<OwnershipFormat, string> = {
@@ -13,7 +13,7 @@ const FORMAT_LABELS: Record<OwnershipFormat, string> = {
 };
 
 export default function AccountPage() {
-  const { entries, loaded, setOwnership, remove, clearAll } = useAccount();
+  const { entries, setOwnership, remove, clearAll } = useAccount();
   const [tab, setTab] = useState<"listened" | "want" | "owned" | "privacy">("listened");
   const [reviewing, setReviewing] = useState<AlbumEntry | null>(null);
 
@@ -114,7 +114,7 @@ function EntryList({
   entries: AlbumEntry[];
   onReview: (e: AlbumEntry) => void;
   onRemove: (id: number) => void;
-  onSetOwnership?: (album: any, format: OwnershipFormat) => void;
+  onSetOwnership?: (album: AccountAlbum, format: OwnershipFormat) => void;
   showFormat?: boolean;
 }) {
   if (entries.length === 0) {
@@ -143,8 +143,7 @@ function EntryList({
             <select
               value={e.ownershipFormat ?? "vinyl"}
               onChange={(ev) => {
-                // minimal album object for the hook
-                onSetOwnership({ id: e.id, artist: e.artist, title: e.title, cover: e.cover } as any, ev.target.value as OwnershipFormat);
+                onSetOwnership({ id: e.id, artist: e.artist, title: e.title, cover: e.cover }, ev.target.value as OwnershipFormat);
               }}
               className="rounded-md border border-white/15 bg-card px-2 py-1 font-mono-funk text-[10px] tracking-wide"
             >
@@ -176,11 +175,12 @@ function EntryList({
 }
 
 function ReviewModal({ entry, onClose }: { entry: AlbumEntry; onClose: () => void }) {
-  const { setRating, setReview, setStatus } = useAccount();
+  const { entries, setRating, setReview } = useAccount();
   const [review, setReviewText] = useState(entry.review);
   const [saved, setSaved] = useState(false);
+  const currentEntry = entries[entry.id] ?? entry;
 
-  const album = { id: entry.id, artist: entry.artist, title: entry.title, cover: entry.cover } as any;
+  const album: AccountAlbum = { id: entry.id, artist: entry.artist, title: entry.title, cover: entry.cover };
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 p-4 backdrop-blur-md" onClick={onClose}>
@@ -201,7 +201,7 @@ function ReviewModal({ entry, onClose }: { entry: AlbumEntry; onClose: () => voi
         <div className="mt-5">
           <p className="font-mono-funk text-[10px] tracking-wider text-muted-foreground uppercase">Your rating</p>
           <div className="mt-2">
-            <Stars value={entry.rating} onChange={(v) => { setRating(album, v); setSaved(false); }} size={24} />
+            <Stars value={currentEntry.rating} onChange={(v) => { setRating(album, v); setSaved(false); }} size={24} />
           </div>
         </div>
 

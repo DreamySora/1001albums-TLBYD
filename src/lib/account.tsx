@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Star, Heart, Disc3, Trash2, FileText, X, Save } from "lucide-react";
+import { useCallback, useState, useSyncExternalStore } from "react";
+import { Star } from "lucide-react";
 import type { Album } from "@/lib/albums-client";
 
 export type AlbumStatus = "listened" | "want" | "owned";
 export type OwnershipFormat = "vinyl" | "cd" | "cassette" | "other";
+export type AccountAlbum = Pick<Album, "id" | "artist" | "title" | "cover">;
 
 export type AlbumEntry = {
   id: number;
@@ -14,53 +14,122 @@ export type AlbumEntry = {
   title: string;
   cover: string | null;
   status: AlbumStatus;
-  rating: number; // 0 = none, 1-5 stars
+  rating: number;
   review: string;
   ownershipFormat?: OwnershipFormat;
   addedAt: number;
 };
 
 const STORAGE_KEY = "album-crate-account-v1";
+const EMPTY_ENTRIES: Record<number, AlbumEntry> = {};
+const listeners = new Set<() => void>();
+
+let entries: Record<number, AlbumEntry> = EMPTY_ENTRIES;
+let initialized = false;
+
+function isAlbumStatus(value: unknown): value is AlbumStatus {
+  return value === "listened" || value === "want" || value === "owned";
+}
+
+function isOwnershipFormat(value: unknown): value is OwnershipFormat | undefined {
+  return value === undefined || value === "vinyl" || value === "cd" || value === "cassette" || value === "other";
+}
+
+function isAlbumEntry(value: unknown): value is AlbumEntry {
+  if (!value || typeof value !== "object") return false;
+  const entry = value as Record<string, unknown>;
+  return (
+    Number.isSafeInteger(entry.id) &&
+    typeof entry.artist === "string" &&
+    typeof entry.title === "string" &&
+    (typeof entry.cover === "string" || entry.cover === null) &&
+    isAlbumStatus(entry.status) &&
+    typeof entry.rating === "number" &&
+    Number.isFinite(entry.rating) &&
+    typeof entry.review === "string" &&
+    isOwnershipFormat(entry.ownershipFormat) &&
+    typeof entry.addedAt === "number" &&
+    Number.isFinite(entry.addedAt)
+  );
+}
 
 function load(): Record<number, AlbumEntry> {
-  if (typeof window === "undefined") return {};
+  if (typeof window === "undefined") return EMPTY_ENTRIES;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as Record<number, AlbumEntry>) : {};
+    if (!raw) return EMPTY_ENTRIES;
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return EMPTY_ENTRIES;
+
+    const validEntries: Record<number, AlbumEntry> = {};
+    for (const value of Object.values(parsed)) {
+      if (isAlbumEntry(value)) validEntries[value.id] = value;
+    }
+    return validEntries;
   } catch {
-    return {};
+    return EMPTY_ENTRIES;
   }
 }
 
-function save(data: Record<number, AlbumEntry>) {
+function save(next: Record<number, AlbumEntry>) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   } catch {
-    // ignore quota
+    // Keep the in-memory account usable when storage is unavailable or full.
   }
+}
+
+function initialize() {
+  if (initialized || typeof window === "undefined") return;
+  entries = load();
+  initialized = true;
+}
+
+function notify() {
+  for (const listener of listeners) listener();
+}
+
+function getSnapshot() {
+  initialize();
+  return entries;
+}
+
+function getServerSnapshot() {
+  return EMPTY_ENTRIES;
+}
+
+function subscribe(listener: () => void) {
+  initialize();
+  listeners.add(listener);
+
+  const onStorage = (event: StorageEvent) => {
+    if (event.key !== STORAGE_KEY) return;
+    entries = load();
+    notify();
+  };
+  window.addEventListener("storage", onStorage);
+
+  return () => {
+    listeners.delete(listener);
+    window.removeEventListener("storage", onStorage);
+  };
+}
+
+function updateEntries(updater: (current: Record<number, AlbumEntry>) => Record<number, AlbumEntry>) {
+  initialize();
+  entries = updater(entries);
+  save(entries);
+  notify();
 }
 
 export function useAccount() {
-  const [entries, setEntries] = useState<Record<number, AlbumEntry>>({});
-  const [loaded, setLoaded] = useState(false);
+  const accountEntries = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setEntries(load());
-    setLoaded(true);
-  }, []);
-
-  const persist = useCallback((next: Record<number, AlbumEntry>) => {
-    setEntries(next);
-    save(next);
-  }, []);
-
-  const setStatus = useCallback(
-    (album: Album, status: AlbumStatus) => {
-      const next = { ...entries };
+  const setStatus = useCallback((album: AccountAlbum, status: AlbumStatus) => {
+    updateEntries((current) => {
+      const next = { ...current };
       const existing = next[album.id];
       if (existing && existing.status === status) {
-        // toggle off
         delete next[album.id];
       } else {
         next[album.id] = {
@@ -75,78 +144,72 @@ export function useAccount() {
           addedAt: existing?.addedAt ?? Date.now(),
         };
       }
-      persist(next);
-    },
-    [entries, persist]
-  );
+      return next;
+    });
+  }, []);
 
-  const setRating = useCallback(
-    (album: Album, rating: number) => {
-      const next = { ...entries };
-      const existing = next[album.id];
-      next[album.id] = {
-        id: album.id,
-        artist: album.artist,
-        title: album.title,
-        cover: album.cover,
-        status: existing?.status ?? "listened",
-        rating: existing?.rating === rating ? 0 : rating,
-        review: existing?.review ?? "",
-        ownershipFormat: existing?.ownershipFormat,
-        addedAt: existing?.addedAt ?? Date.now(),
+  const setRating = useCallback((album: AccountAlbum, rating: number) => {
+    updateEntries((current) => {
+      const existing = current[album.id];
+      return {
+        ...current,
+        [album.id]: {
+          id: album.id,
+          artist: album.artist,
+          title: album.title,
+          cover: album.cover,
+          status: existing?.status ?? "listened",
+          rating: existing?.rating === rating ? 0 : rating,
+          review: existing?.review ?? "",
+          ownershipFormat: existing?.ownershipFormat,
+          addedAt: existing?.addedAt ?? Date.now(),
+        },
       };
-      persist(next);
-    },
-    [entries, persist]
-  );
+    });
+  }, []);
 
-  const setReview = useCallback(
-    (album: Album, review: string) => {
-      const next = { ...entries };
-      const existing = next[album.id];
-      next[album.id] = {
-        id: album.id,
-        artist: album.artist,
-        title: album.title,
-        cover: album.cover,
-        status: existing?.status ?? "listened",
-        rating: existing?.rating ?? 0,
-        review,
-        ownershipFormat: existing?.ownershipFormat,
-        addedAt: existing?.addedAt ?? Date.now(),
+  const setReview = useCallback((album: AccountAlbum, review: string) => {
+    updateEntries((current) => {
+      const existing = current[album.id];
+      return {
+        ...current,
+        [album.id]: {
+          id: album.id,
+          artist: album.artist,
+          title: album.title,
+          cover: album.cover,
+          status: existing?.status ?? "listened",
+          rating: existing?.rating ?? 0,
+          review,
+          ownershipFormat: existing?.ownershipFormat,
+          addedAt: existing?.addedAt ?? Date.now(),
+        },
       };
-      persist(next);
-    },
-    [entries, persist]
-  );
+    });
+  }, []);
 
-  const setOwnership = useCallback(
-    (album: Album, format: OwnershipFormat) => {
-      const next = { ...entries };
-      const existing = next[album.id];
-      if (!existing) return;
-      next[album.id] = { ...existing, ownershipFormat: format };
-      persist(next);
-    },
-    [entries, persist]
-  );
+  const setOwnership = useCallback((album: AccountAlbum, format: OwnershipFormat) => {
+    updateEntries((current) => {
+      const existing = current[album.id];
+      return existing ? { ...current, [album.id]: { ...existing, ownershipFormat: format } } : current;
+    });
+  }, []);
 
-  const remove = useCallback(
-    (albumId: number) => {
-      const next = { ...entries };
+  const remove = useCallback((albumId: number) => {
+    updateEntries((current) => {
+      const next = { ...current };
       delete next[albumId];
-      persist(next);
-    },
-    [entries, persist]
-  );
+      return next;
+    });
+  }, []);
 
   const clearAll = useCallback(() => {
-    persist({});
-  }, [persist]);
+    updateEntries(() => EMPTY_ENTRIES);
+  }, []);
 
   return {
-    entries,
-    loaded,
+    entries: accountEntries,
+    loaded: initialized,
     setStatus,
     setRating,
     setReview,
@@ -182,5 +245,3 @@ export function Stars({ value, onChange, size = 14 }: { value: number; onChange?
     </div>
   );
 }
-
-export { motion, AnimatePresence, Heart, Disc3, Trash2, FileText, X, Save };

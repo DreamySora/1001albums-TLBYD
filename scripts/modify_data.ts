@@ -8,6 +8,7 @@ import { raw5 } from "../src/data/raw-5";
 import { raw6 } from "../src/data/raw-6";
 import { FEMALE_ARTISTS } from "../src/data/female-set";
 import { writeFileSync } from "fs";
+import { resolve } from "path";
 
 let allRaw = [...raw1, ...raw2, ...raw3, ...raw4, ...raw5, ...raw6];
 
@@ -1061,7 +1062,7 @@ export const raw${fileNum}: [string, string, number, string, number, string][] =
 ${lines}
 ];`;
 
-  const path = `/home/franc/Documenti/Opencode/project1/1001Albums_TLBFYD/src/data/raw-${fileNum}.ts`;
+  const path = resolve(import.meta.dir, `../src/data/raw-${fileNum}.ts`);
   writeFileSync(path, content);
   console.log(`Written raw-${fileNum}.ts (${albumsBySource[i].length} albums)`);
 }

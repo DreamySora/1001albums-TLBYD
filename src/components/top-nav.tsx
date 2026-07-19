@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sun, Moon, Menu, X, Disc3, User, Compass, Dice6, Music } from "lucide-react";
 import Link from "next/link";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { useState, useEffect } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 export function TopNav({ active }: { active: "home" | "random" | "wheel" | "account" }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -70,8 +70,11 @@ export function TopNav({ active }: { active: "home" | "random" | "wheel" | "acco
 
 function ThemeToggle({ className = "" }: { className?: string }) {
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useSyncExternalStore(
+    () => () => undefined,
+    () => true,
+    () => false
+  );
   const isDark = theme === "dark";
   if (!mounted) {
     return (
