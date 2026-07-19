@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  typescript: {
+    ignoreBuildErrors: false,
+  },
   reactStrictMode: true,
   // Allow external cover-art images (iTunes CDN, Cover Art Archive, Discogs).
   images: {

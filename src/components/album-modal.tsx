@@ -48,6 +48,7 @@ export function AlbumModal({ album, onClose }: { album: Album | null; onClose: (
   const [error, setError] = useState<string | null>(null);
   const [playingUrl, setPlayingUrl] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [description, setDescription] = useState<string | undefined>(undefined);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const togglePlay = (url: string | null) => {
@@ -66,6 +67,14 @@ export function AlbumModal({ album, onClose }: { album: Album | null; onClose: (
     audioRef.current = el;
     setPlayingUrl(url);
   };
+
+  // Reset reload state when album changes
+  useEffect(() => {
+    if (album) {
+      setRefreshKey(0);
+      setDescription(undefined);
+    }
+  }, [album?.id]);
 
   useEffect(() => {
     return () => {
@@ -91,7 +100,7 @@ export function AlbumModal({ album, onClose }: { album: Album | null; onClose: (
     if (cached && refreshKey === 0) {
       setData(cached);
       setLoading(false);
-      fetchAlbumDescription(album, alive);
+      fetchAlbumDescription(album.id, alive);
       return;
     }
 
@@ -112,25 +121,22 @@ export function AlbumModal({ album, onClose }: { album: Album | null; onClose: (
         if (alive) setLoading(false);
       }
     })();
-    fetchAlbumDescription(album, alive);
+    fetchAlbumDescription(album.id, alive);
 
     return () => {
       alive = false;
     };
-  }, [album, refreshKey]);
+  }, [album?.id, refreshKey]);
 
-  function fetchAlbumDescription(album: Album, alive: boolean) {
-    if (!album.description) {
-      fetch(`/api/album?id=${album.id}`)
-        .then((r) => r.json())
-        .then((full) => {
-          if (alive && full?.description) {
-            (album as Album).description = full.description;
-            setData((d) => (d ? { ...d } : d));
-          }
-        })
-        .catch(() => {});
-    }
+  function fetchAlbumDescription(id: number, alive: boolean) {
+    fetch(`/api/album?id=${id}`)
+      .then((r) => r.json())
+      .then((full) => {
+        if (alive && full?.description) {
+          setDescription(full.description);
+        }
+      })
+      .catch(() => {});
   }
 
   const reloadTracklist = () => {
@@ -234,14 +240,16 @@ export function AlbumModal({ album, onClose }: { album: Album | null; onClose: (
                   ) : null}
                 </div>
 
-                <p className="mt-2 font-grotesk text-xs leading-relaxed text-foreground/80 sm:text-sm">
-                  {album.description}
-                </p>
+                {(description ?? album.description) && (
+                  <p className="mt-2 font-grotesk text-xs leading-relaxed text-foreground/80 sm:text-sm">
+                    {description ?? album.description}
+                  </p>
+                )}
 
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {album.genres.map((g) => (
+<div className="mt-2 flex flex-wrap gap-1">
+                  {album.genres.map((g, idx) => (
                     <span
-                      key={g}
+                      key={`${g}-${idx}`}
                       className="rounded-full border border-white/15 px-1.5 py-0.5 font-mono-funk text-[8px] tracking-wide text-foreground/70 sm:text-[9px]"
                     >
                       {g}

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Search, X, SlidersHorizontal, Users, ChevronDown, ChevronUp, Grid, Check, X as XIcon } from "lucide-react";
+import { useState, useMemo, useRef, useCallback } from "react";
+import { Search, X, SlidersHorizontal, Users, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Grid, Check, X as XIcon } from "lucide-react";
 import {
   DURATION_BUCKETS,
   SORT_OPTIONS,
@@ -64,6 +64,13 @@ export function FilterBar({
   const [showAllGenres, setShowAllGenres] = useState(false);
   const [showDecadePicker, setShowDecadePicker] = useState(false);
   const [artistSearch, setArtistSearch] = useState("");
+  const genreScrollRef = useRef<HTMLDivElement>(null);
+  const scrollGenres = useCallback((dir: "left" | "right") => {
+    const el = genreScrollRef.current;
+    if (!el) return;
+    const amount = 200;
+    el.scrollBy({ left: dir === "left" ? -amount : amount, behavior: "smooth" });
+  }, []);
 
   const { decadeGenres, otherGenres } = useMemo(() => {
     const decades: GenreInfo[] = [];
@@ -75,8 +82,6 @@ export function FilterBar({
     decades.sort((a, b) => DECADES.indexOf(a.name) - DECADES.indexOf(b.name));
     return { decadeGenres: decades, otherGenres: others };
   }, [genres]);
-
-  const visibleOtherGenres = showAllGenres ? otherGenres : otherGenres.slice(0, 100);
 
   return (
     <div className="sticky top-14 z-40 border-y border-white/10 bg-background/85 backdrop-blur-xl">
@@ -200,7 +205,7 @@ export function FilterBar({
         </Popover>
 
         <div className="flex items-center gap-1.5 font-mono-funk text-[10px] tracking-wider text-muted-foreground">
-          <span className="text-lime">{resultCount.toLocaleString()}</span>
+          <span className="text-lime">{resultCount.toLocaleString("en-US")}</span>
         </div>
       </div>
 
@@ -277,17 +282,16 @@ export function FilterBar({
           <span className="shrink-0 text-white/20 font-mono-funk text-[9px] tracking-wider select-none">|</span>
 
           {/* Other Genres - horizontal scroll with Show All popover */}
-          <Popover>
+          <Popover open={showAllGenres} onOpenChange={setShowAllGenres}>
             <PopoverTrigger asChild>
               <button
-                onClick={() => setShowAllGenres(!showAllGenres)}
                 className={cn(
                   "shrink-0 rounded-full border px-2.5 py-0.5 font-mono-funk text-[9px] tracking-wide transition flex items-center gap-1",
                   showAllGenres ? "border-hotpink text-hotpink" : "border-white/15 text-muted-foreground hover:border-hotpink hover:text-foreground"
                 )}
               >
                 <ChevronDown className={cn("size-3 transition-transform", showAllGenres && "rotate-180")} />
-                <span className="hidden sm:inline">{showAllGenres ? "LESS" : "MORE"}</span>
+                <span>{showAllGenres ? "LESS" : "MORE"}</span>
               </button>
             </PopoverTrigger>
             <PopoverContent
@@ -332,26 +336,42 @@ export function FilterBar({
             </PopoverContent>
           </Popover>
 
-          {/* Visible genres chips (horizontal scroll) - limited to first ~20 for quick access */}
-          <div className="flex flex-1 gap-1 overflow-x-auto pb-0.5 scrollbar-funky">
-            {visibleOtherGenres.slice(0, 20).map((g) => {
-              const active = filters.genres.includes(g.name);
-              const color = ACCENTS[hashStr(g.name, ACCENTS.length)];
-              return (
-                <button
-                  key={g.name}
-                  onClick={() => toggleGenre(g.name)}
-                  className={cn(
-                    "shrink-0 rounded-full border px-2 py-0.5 font-mono-funk text-[9px] tracking-wide transition-all",
-                    active ? "border-transparent text-black" : "border-white/15 text-foreground/75 hover:scale-105"
-                  )}
-                  style={active ? { backgroundColor: color } : undefined}
-                >
-                  {g.name}
-                  <span className="ml-0.5 opacity-50 text-[8px]">{g.count}</span>
-                </button>
-              );
-            })}
+          {/* Visible genres chips (horizontal scroll with arrow buttons) */}
+          <div className="flex flex-1 items-center gap-1 overflow-hidden">
+            <button
+              onClick={() => scrollGenres("left")}
+              className="shrink-0 flex size-6 items-center justify-center rounded-full border border-white/10 bg-card/60 text-muted-foreground hover:border-lime hover:text-lime transition"
+              aria-label="Scroll genres left"
+            >
+              <ChevronLeft className="size-3.5" />
+            </button>
+            <div ref={genreScrollRef} className="flex flex-1 gap-1 overflow-x-auto no-scrollbar">
+              {otherGenres.map((g) => {
+                const active = filters.genres.includes(g.name);
+                const color = ACCENTS[hashStr(g.name, ACCENTS.length)];
+                return (
+                  <button
+                    key={g.name}
+                    onClick={() => toggleGenre(g.name)}
+                    className={cn(
+                      "shrink-0 rounded-full border px-2 py-0.5 font-mono-funk text-[9px] tracking-wide transition-all",
+                      active ? "border-transparent text-black" : "border-white/15 text-foreground/75 hover:scale-105"
+                    )}
+                    style={active ? { backgroundColor: color } : undefined}
+                  >
+                    {g.name}
+                    <span className="ml-0.5 opacity-50 text-[8px]">{g.count}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={() => scrollGenres("right")}
+              className="shrink-0 flex size-6 items-center justify-center rounded-full border border-white/10 bg-card/60 text-muted-foreground hover:border-lime hover:text-lime transition"
+              aria-label="Scroll genres right"
+            >
+              <ChevronRight className="size-3.5" />
+            </button>
           </div>
         </div>
       </div>

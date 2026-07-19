@@ -4,13 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000",
-    "build": "next build && bun scripts/copy-standalone.ts",
-    "start": "bun scripts/start-standalone.ts",
-    "lint": "eslint .",
-    "db:push": "prisma db push",
-    "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev",
-    "db:reset": "prisma migrate reset"
+    "build": "next build",
+    "start": "node .next/standalone/server.js",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

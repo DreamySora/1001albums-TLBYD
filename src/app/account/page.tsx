@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Disc3, Trash2, Heart, CheckCircle2, FileText, Save, X, Shield, Cookie } from "lucide-react";
-import { useAccount, Stars, type AccountAlbum, type AlbumEntry, type OwnershipFormat } from "@/lib/account";
+import { useAccount, Stars, type AlbumEntry, type OwnershipFormat } from "@/lib/account";
+type AlbumLike = { id: number; artist: string; title: string; cover?: string | null };
 import { TopNav } from "@/components/top-nav";
 
 const FORMAT_LABELS: Record<OwnershipFormat, string> = {
@@ -13,7 +14,7 @@ const FORMAT_LABELS: Record<OwnershipFormat, string> = {
 };
 
 export default function AccountPage() {
-  const { entries, setOwnership, remove, clearAll } = useAccount();
+  const { entries, loaded, setOwnership, setRating, setReview, remove, clearAll } = useAccount();
   const [tab, setTab] = useState<"listened" | "want" | "owned" | "privacy">("listened");
   const [reviewing, setReviewing] = useState<AlbumEntry | null>(null);
 
@@ -88,7 +89,20 @@ export default function AccountPage() {
         )}
       </main>
 
-      {reviewing && <ReviewModal entry={reviewing} onClose={() => setReviewing(null)} />}
+        {reviewing && (
+          <ReviewModal
+            entry={reviewing}
+            onClose={() => setReviewing(null)}
+            onSetRating={(album, v) => {
+              setRating(album, v);
+              setReviewing((prev) => prev ? { ...prev, rating: v } : prev);
+            }}
+            onSetReview={(album, text) => {
+              setReview(album, text);
+              setReviewing((prev) => prev ? { ...prev, review: text } : prev);
+            }}
+          />
+        )}
     </div>
   );
 }
@@ -114,7 +128,7 @@ function EntryList({
   entries: AlbumEntry[];
   onReview: (e: AlbumEntry) => void;
   onRemove: (id: number) => void;
-  onSetOwnership?: (album: AccountAlbum, format: OwnershipFormat) => void;
+  onSetOwnership?: (album: any, format: OwnershipFormat) => void;
   showFormat?: boolean;
 }) {
   if (entries.length === 0) {
@@ -143,7 +157,8 @@ function EntryList({
             <select
               value={e.ownershipFormat ?? "vinyl"}
               onChange={(ev) => {
-                onSetOwnership({ id: e.id, artist: e.artist, title: e.title, cover: e.cover }, ev.target.value as OwnershipFormat);
+                // minimal album object for the hook
+                onSetOwnership({ id: e.id, artist: e.artist, title: e.title, cover: e.cover } as any, ev.target.value as OwnershipFormat);
               }}
               className="rounded-md border border-white/15 bg-card px-2 py-1 font-mono-funk text-[10px] tracking-wide"
             >
@@ -174,13 +189,21 @@ function EntryList({
   );
 }
 
-function ReviewModal({ entry, onClose }: { entry: AlbumEntry; onClose: () => void }) {
-  const { entries, setRating, setReview } = useAccount();
+function ReviewModal({
+  entry,
+  onClose,
+  onSetRating,
+  onSetReview,
+}: {
+  entry: AlbumEntry;
+  onClose: () => void;
+  onSetRating: (album: AlbumLike, rating: number) => void;
+  onSetReview: (album: AlbumLike, review: string) => void;
+}) {
   const [review, setReviewText] = useState(entry.review);
   const [saved, setSaved] = useState(false);
-  const currentEntry = entries[entry.id] ?? entry;
 
-  const album: AccountAlbum = { id: entry.id, artist: entry.artist, title: entry.title, cover: entry.cover };
+  const album = { id: entry.id, artist: entry.artist, title: entry.title, cover: entry.cover };
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 p-4 backdrop-blur-md" onClick={onClose}>
@@ -193,7 +216,7 @@ function ReviewModal({ entry, onClose }: { entry: AlbumEntry; onClose: () => voi
             <h3 className="font-display text-2xl uppercase tracking-tight">{entry.title}</h3>
             <p className="font-grotesk text-sm text-muted-foreground">{entry.artist}</p>
           </div>
-          <button onClick={onClose} className="rounded-full bg-white/10 p-2 hover:bg-white/20">
+          <button onClick={onClose} className="rounded-full bg-white/10 p-1.5 text-foreground transition hover:bg-white/20">
             <X className="size-4" />
           </button>
         </div>
@@ -201,7 +224,7 @@ function ReviewModal({ entry, onClose }: { entry: AlbumEntry; onClose: () => voi
         <div className="mt-5">
           <p className="font-mono-funk text-[10px] tracking-wider text-muted-foreground uppercase">Your rating</p>
           <div className="mt-2">
-            <Stars value={currentEntry.rating} onChange={(v) => { setRating(album, v); setSaved(false); }} size={24} />
+            <Stars value={entry.rating} onChange={(v) => { onSetRating(album, v); setSaved(false); }} size={24} />
           </div>
         </div>
 
@@ -219,7 +242,7 @@ function ReviewModal({ entry, onClose }: { entry: AlbumEntry; onClose: () => voi
         <div className="mt-3 flex gap-2">
           <button
             onClick={() => {
-              setReview(album, review);
+              onSetReview(album, review);
               setSaved(true);
             }}
             className="flex items-center gap-1.5 rounded-full bg-lime px-4 py-2 font-mono-funk text-[11px] tracking-wider text-black transition hover:scale-105"

@@ -107,7 +107,7 @@ export default function RandomPage() {
         {/* Pool info + roll button */}
         <div className="mt-8 flex flex-col items-center gap-4">
           <p className="font-mono-funk text-xs tracking-wider text-muted-foreground">
-            POOL: <span className="text-lime">{pool.length.toLocaleString()}</span> ALBUMS
+            POOL: <span className="text-lime">{pool.length.toLocaleString("en-US")}</span> ALBUMS
           </p>
           <button
             onClick={pickRandom}

@@ -1,5 +1,4 @@
-// Service Worker for 1001 Albums PWA
-const CACHE_NAME = "1001-albums-v1";
+const CACHE = "1001-albums-v1";
 const STATIC_ASSETS = [
   "/",
   "/random",
@@ -7,36 +6,29 @@ const STATIC_ASSETS = [
   "/manifest.json",
 ];
 
-// Install - cache static assets
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
-    })
+    caches.open(CACHE).then((cache) => cache.addAll(STATIC_ASSETS))
   );
   self.skipWaiting();
 });
 
-// Activate - clean up old caches
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
+    caches.keys().then((keys) =>
+      Promise.all(
         keys
-          .filter((key) => key !== CACHE_NAME)
+          .filter((key) => key !== CACHE)
           .map((key) => caches.delete(key))
-      );
-    })
+      )
+    )
   );
   self.clients.claim();
 });
 
-// Fetch - network first for API, cache first for static assets
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
-
-  // Skip non-GET requests
   if (request.method !== "GET") return;
 
   // API routes - network first, fallback to cache
@@ -44,11 +36,8 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          // Clone response before caching
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, responseClone);
-          });
+          const clone = response.clone();
+          caches.open(CACHE).then((cache) => cache.put(request, clone));
           return response;
         })
         .catch(() => caches.match(request))
@@ -56,40 +45,33 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Static assets - cache first
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached;
-      
-      return fetch(request)
+  // Navigation requests - network first (so users always get fresh HTML)
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request)
         .then((response) => {
-          // Only cache successful responses
-          if (!response.ok) return response;
-          
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, responseClone);
-          });
+          const clone = response.clone();
+          caches.open(CACHE).then((cache) => cache.put(request, clone));
           return response;
         })
-        .catch(() => {
-          // Offline fallback for navigation requests
-          if (request.mode === "navigate") {
-            return caches.match("/");
+        .catch(() => caches.match(request).then((cached) => cached || caches.match("/")))
+    );
+    return;
+  }
+
+  // Static assets - stale-while-revalidate
+  event.respondWith(
+    caches.match(request).then((cached) => {
+      const fetchPromise = fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE).then((cache) => cache.put(request, clone));
           }
-        });
+          return response;
+        })
+        .catch(() => cached);
+      return cached || fetchPromise;
     })
   );
 });
-
-// Background sync for pending actions (if needed)
-self.addEventListener("sync", (event) => {
-  if (event.tag === "sync-favorites") {
-    event.waitUntil(syncFavorites());
-  }
-});
-
-async function syncFavorites() {
-  // Placeholder for future offline favorites sync
-  console.log("Syncing favorites...");
-}

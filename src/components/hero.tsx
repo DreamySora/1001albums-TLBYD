@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Disc3, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { Marquee } from "./marquee";
 
 export function Hero({ total, genreCount, artistCount }: { total: number; genreCount: number; artistCount: number }) {
@@ -58,7 +58,7 @@ export function Hero({ total, genreCount, artistCount }: { total: number; genreC
           className="mt-3 sm:mt-5 max-w-2xl font-grotesk text-sm sm:text-lg text-muted-foreground"
         >
           A funky, opinionated guide to the records that matter. Dive in by genre, artist, letter or
-          length — every cover, every note, a reason to press play.
+          length every cover, every note, a reason to press play.
         </motion.p>
 
         {/* stats */}
@@ -92,7 +92,7 @@ function Stat({ n, label, color }: { n: number; label: string; color: string }) 
   return (
     <div className="flex items-baseline gap-2">
       <span className="font-display text-4xl leading-none" style={{ color }}>
-        {n.toLocaleString()}
+        {n.toLocaleString("en-US")}
       </span>
       <span className="font-mono-funk text-[11px] tracking-wider text-muted-foreground uppercase">
         <Sparkles className="mr-1 inline size-3" style={{ color }} />

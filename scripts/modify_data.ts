@@ -8,9 +8,9 @@ import { raw5 } from "../src/data/raw-5";
 import { raw6 } from "../src/data/raw-6";
 import { FEMALE_ARTISTS } from "../src/data/female-set";
 import { writeFileSync } from "fs";
-import { resolve } from "path";
+import { join } from "path";
 
-let allRaw = [...raw1, ...raw2, ...raw3, ...raw4, ...raw5, ...raw6];
+const allRaw = [...raw1, ...raw2, ...raw3, ...raw4, ...raw5, ...raw6];
 
 // Convert to objects for easier manipulation
 type RawAlbum = {
@@ -24,7 +24,7 @@ type RawAlbum = {
   sourceFile: number;
 };
 
-let albums: RawAlbum[] = allRaw.map(([artist, title, year, genreStr, duration, description], i) => ({
+const albums: RawAlbum[] = allRaw.map(([artist, title, year, genreStr, duration, description], i) => ({
   artist,
   title,
   year,
@@ -196,7 +196,7 @@ const REMOVE_PUNK_SHOE = 20;
 const REMOVE_ELEC_AMB = 20;
 const REMOVE_LATINO = 10;
 
-let removedCount = {
+const removedCount = {
   indieRock: 0,
   funk: 0,
   punkShoe: 0,
@@ -1062,8 +1062,8 @@ export const raw${fileNum}: [string, string, number, string, number, string][] =
 ${lines}
 ];`;
 
-  const path = resolve(import.meta.dir, `../src/data/raw-${fileNum}.ts`);
-  writeFileSync(path, content);
+  const outputPath = join(__dirname, "..", "src", "data", `raw-${fileNum}.ts`);
+  writeFileSync(outputPath, content);
   console.log(`Written raw-${fileNum}.ts (${albumsBySource[i].length} albums)`);
 }
 

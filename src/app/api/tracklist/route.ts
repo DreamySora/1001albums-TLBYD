@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFileSync, readFileSync, existsSync, mkdirSync, unlinkSync } from "fs";
+import { mkdir, readFile, writeFile, unlink } from "fs/promises";
+import { existsSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
 import { ALBUMS } from "@/data/albums";
 import { matchScore, MATCH_THRESHOLD } from "@/lib/itunes-match";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const CACHE_DIR = "/tmp/tracklists";
-if (!existsSync(CACHE_DIR)) mkdirSync(CACHE_DIR, { recursive: true });
+const CACHE_DIR = join(tmpdir(), "tracklists");
+// Use sync check for initial setup (only once at module load)
+if (!existsSync(CACHE_DIR)) mkdir(CACHE_DIR, { recursive: true }).catch(() => {});
 
 type Track = {
   number: number;
@@ -144,7 +148,7 @@ async function mbFetchRecordings(mbid: string, artist: string): Promise<Track[] 
   const ctrl = new AbortController();
   const to = setTimeout(() => ctrl.abort(), 8000);
   let artistName = artist;
-  let rawTracks: { title: string; length: number | null }[] = [];
+  const rawTracks: { title: string; length: number | null }[] = [];
   try {
     const res = await fetch(url, { headers: { "User-Agent": MB_UA, Accept: "application/json" }, signal: ctrl.signal });
     if (!res.ok) return null;
@@ -283,15 +287,14 @@ export async function GET(req: NextRequest) {
 
   const forceRefresh = req.nextUrl.searchParams.has("refresh");
 
-  const cacheFile = `${CACHE_DIR}/${albumId}.json`;
+  const cacheFile = join(CACHE_DIR, `${albumId}.json`);
   if (!forceRefresh) {
     try {
-      if (existsSync(cacheFile)) {
-        const cachedData = JSON.parse(readFileSync(cacheFile, "utf-8")) as TracklistResponse;
-        return NextResponse.json({ ...cachedData, cached: true });
-      }
+      const raw = await readFile(cacheFile, "utf-8");
+      const cachedData = JSON.parse(raw) as TracklistResponse;
+      return NextResponse.json({ ...cachedData, cached: true });
     } catch {
-      // ignore cache read errors (e.g., Vercel read-only fs)
+      // ignore cache read errors (e.g., read-only fs)
     }
   }
 
@@ -308,7 +311,7 @@ export async function GET(req: NextRequest) {
         tracks,
         cached: false,
       };
-      try { writeFileSync(cacheFile, JSON.stringify(payload)); } catch {}
+      try { await writeFile(cacheFile, JSON.stringify(payload)); } catch {}
       return NextResponse.json(payload);
     }
     // iTunes failed verification — fall through to MusicBrainz fallback.
@@ -328,7 +331,7 @@ export async function GET(req: NextRequest) {
         tracks: mbTracks,
         cached: false,
       };
-      try { writeFileSync(cacheFile, JSON.stringify(payload)); } catch {}
+      try { await writeFile(cacheFile, JSON.stringify(payload)); } catch {}
       return NextResponse.json(payload);
     }
   }
@@ -345,12 +348,12 @@ export async function GET(req: NextRequest) {
       tracks: dzTracks,
       cached: false,
     };
-    try { writeFileSync(cacheFile, JSON.stringify(payload)); } catch {}
+    try { await writeFile(cacheFile, JSON.stringify(payload)); } catch {}
     return NextResponse.json(payload);
   }
 
   // Neither iTunes, MB, nor Deezer had the tracklist — return empty.
-  try { if (existsSync(cacheFile)) unlinkSync(cacheFile); } catch {}
+  try { await unlink(cacheFile).catch(() => {}); } catch {}
   return NextResponse.json({
     albumId,
     collectionId: cid ?? null,

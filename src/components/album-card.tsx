@@ -141,11 +141,11 @@ export const AlbumCard = memo(function AlbumCard({ album, index, onGenre, onArti
           {album.artist}
         </button>
 
-        {/* genre badges */}
+{/* genre badges */}
         <div className="mt-2 flex flex-wrap gap-1">
-          {album.genres.map((g) => (
+          {album.genres.map((g, idx) => (
             <button
-              key={g}
+              key={`${g}-${idx}`}
               onClick={() => onGenre(g)}
               className={cn(
                 "rounded-full border px-1.5 py-0.5 font-mono-funk text-[9px] tracking-wide transition-all",

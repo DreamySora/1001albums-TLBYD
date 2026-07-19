@@ -59,4 +59,10 @@ export const raw7: [string, string, number, string, number, string][] = [
   ["The Marías", "CINEMA", 2021, "Indie Pop|Dream Pop|Psychedelic Pop|Bossa Nova|Alternative|2020s", 40, "A sultry, bilingual indie-pop debut blending lounge, psych and dream pop."],
   ["Men I Trust", "Oncle Jazz", 2019, "Indie Pop|Dream Pop|Bedroom Pop|Lo-Fi|Chillwave|2010s", 69, "A sprawling, laid-back dream-pop record of warm basslines and soft vocals."],
   ["Cariño", "Cariño", 2021, "Indie Pop|Synthpop|Electropop|Dance-Pop|Spanish Indie|2020s", 30, "A vibrant Spanish indie-pop debut of infectious synth hooks and playful energy."],
+
+  // Pink Floyd
+  ["Pink Floyd", "The Dark Side of the Moon", 1973, "Progressive Rock|Art Rock|Experimental Rock|Symphonic Rock|1970s", 43, "A seamless concept album of existential dread, cosmic synths and indelible hooks."],
+  ["Pink Floyd", "Wish You Were Here", 1975, "Progressive Rock|Art Rock|Experimental|Symphonic Rock|1970s", 44, "A meditation on absence and the music industry, anchored by one of rock's greatest title tracks."],
+  ["Pink Floyd", "The Wall", 1979, "Progressive Rock|Art Rock|Symphonic Rock|Experimental|Rock Opera|1970s", 81, "A sprawling rock opera about isolation and breakdown, both lavish and crushing."],
+  ["Pink Floyd", "The Piper at the Gates of Dawn", 1967, "Progressive Rock|Experimental Rock|Space Rock|British Rock|1960s", 42, "Syd Barrett's visionary blend of whimsy, space-age pop and avant-garde noise."],
 ];

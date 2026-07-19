@@ -65,7 +65,7 @@ export default function WheelPage() {
           Wheel of <span className="text-gradient-funk">Fate</span>
         </h1>
         <p className="mt-3 max-w-xl text-center font-grotesk text-sm text-muted-foreground">
-          All {albums.length.toLocaleString()} records are on the wheel. Filter by genre to narrow it down —
+          All {albums.length.toLocaleString("en-US")} records are on the wheel. Filter by genre to narrow it down —
           selecting multiple genres shows only albums that have ALL of them.
         </p>
 

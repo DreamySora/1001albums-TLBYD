@@ -251,6 +251,10 @@ html:not(.dark) .grain::before {
 
 .scrollbar-funky::-webkit-scrollbar-thumb { background: oklch(0.9 0.22 125 / 0.5); background-clip: padding-box; }
 
+/* Hide scrollbar but keep scroll functionality */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
 /* Safe area utilities for mobile */
 .safe-top { padding-top: env(safe-area-inset-top); }
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }

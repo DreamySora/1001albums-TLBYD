@@ -2,12 +2,12 @@
 
 import { useTheme } from "next-themes";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sun, Moon, Menu, X, Disc3, User, Compass, Dice6, Music } from "lucide-react";
+import { Sun, Moon, Menu, X, Disc3, User, Compass, Dice6, Music, Calendar, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { useState, useSyncExternalStore } from "react";
+import { useState, useEffect } from "react";
 
-export function TopNav({ active }: { active: "home" | "random" | "wheel" | "account" }) {
+export function TopNav({ active }: { active: "home" | "random" | "wheel" | "account" | "album-of-the-day" }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -16,7 +16,7 @@ export function TopNav({ active }: { active: "home" | "random" | "wheel" | "acco
         <Link href="/" className="flex items-center gap-3 font-display text-lg uppercase tracking-tight text-foreground" aria-label="Home">
           <Disc3 className="size-4 text-hotpink animate-[spin_8s_linear_infinite]" />
           <div className="flex items-center gap-1 sm:gap-2">
-            <span className="font-display text-base sm:text-xl tracking-tight text-gradient-funk">
+            <span className="font-display text-xl sm:text-3xl tracking-tight text-gradient-funk">
               1001<span className="text-hotpink">.</span>
             </span>
             <span className="font-grotesk text-[10px] sm:text-sm tracking-wider text-gradient-funk uppercase leading-none sm:leading-normal">
@@ -29,6 +29,9 @@ export function TopNav({ active }: { active: "home" | "random" | "wheel" | "acco
         <div className="hidden md:flex items-center gap-3">
           <NavLink href="/" label="Browse" active={active === "home"} className="size-9"><Compass className="size-4" /></NavLink>
           <NavLink href="/random" label="Random" active={active === "random"} className="size-9"><Dice6 className="size-4" /></NavLink>
+          <NavLink href="/album-of-the-day" label="Album of the Day" active={active === "album-of-the-day"} className="size-9">
+            <Calendar className="size-4" />
+          </NavLink>
           <NavLink href="/wheel" label="Wheel" active={active === "wheel"} className="size-9"><Music className="size-4" /></NavLink>
           <NavLink href="/account" label="Account" active={active === "account"} className="size-9"><User className="size-4" /></NavLink>
           <ThemeToggle />
@@ -57,6 +60,9 @@ export function TopNav({ active }: { active: "home" | "random" | "wheel" | "acco
             <div className="flex flex-col gap-2">
               <NavLink href="/" label="Browse" active={active === "home"} className="justify-start px-4 py-3 text-base"><Compass className="size-4 mr-4" /> Browse</NavLink>
               <NavLink href="/random" label="Random" active={active === "random"} className="justify-start px-4 py-3 text-base"><Dice6 className="size-4 mr-4" /> Random</NavLink>
+              <NavLink href="/album-of-the-day" label="Album of the Day" active={active === "album-of-the-day"} className="justify-start px-4 py-3 text-base">
+                <Calendar className="size-4 mr-4" /> Album of the Day
+              </NavLink>
               <NavLink href="/wheel" label="Wheel" active={active === "wheel"} className="justify-start px-4 py-3 text-base"><Music className="size-4 mr-4" /> Wheel</NavLink>
               <NavLink href="/account" label="Account" active={active === "account"} className="justify-start px-4 py-3 text-base"><User className="size-4 mr-4" /> Account</NavLink>
             </div>
@@ -70,11 +76,9 @@ export function TopNav({ active }: { active: "home" | "random" | "wheel" | "acco
 
 function ThemeToggle({ className = "" }: { className?: string }) {
   const { theme, setTheme } = useTheme();
-  const mounted = useSyncExternalStore(
-    () => () => undefined,
-    () => true,
-    () => false
-  );
+  const [mounted, setMounted] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- next-themes hydration pattern
+  useEffect(() => { setMounted(true); }, []);
   const isDark = theme === "dark";
   if (!mounted) {
     return (
